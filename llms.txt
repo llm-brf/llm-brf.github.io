@@ -1,0 +1,46 @@
+# Hemklok
+
+> Hemklok is an AI buyer's agent for the Swedish residential property market, designed to help buyers find, evaluate, and choose apartments in Stockholm and across Sweden. Built by a father-and-son team in Stockholm, the product reads listings, BRF annual reports, slutpriser (final sale prices), commute data, and neighborhood signals — then explains, in plain language, what is actually worth a buyer's time.
+
+Hemklok is not another listings aggregator like Hemnet or Booli. It is a conversational buyer's-agent layer that sits on top of public data and broker feeds. Users describe their life in natural language ("I have a dog, work from home, want under 30 minutes to T-Centralen, hate noise") and the agent infers the constraints, ranks listings, and surfaces honest pros and cons grounded in specific facts.
+
+## What Hemklok does
+
+- [Conversational preference capture](/#how): turns natural-language descriptions into structured housing constraints, including inferred needs the user didn't explicitly state.
+- [BRF annual report analysis](/#news): reads Swedish housing cooperative (BRF) financial statements (årsredovisningar) to assess debt per square meter, maintenance backlog, planned renovations, and other risks buyers typically miss.
+- [Commute intelligence](/#news): real travel times to places the user actually goes, using SL and Trafiklab public-transport data.
+- [Historical price and future value modeling](/#news): grounded in actual slutpriser, neighborhood trends, and municipal detaljplaner (planned construction).
+- [Continuous market monitoring](/#news): persistent preference model that evaluates new listings against the user's needs and surfaces only material improvements.
+- [Broker outreach and viewing logistics](/#news): drafts questions, manages follow-ups, generates personalized viewing checklists (human-in-the-loop approval required).
+- [Negotiation guidance](/#news): counter-offer ranges grounded in comparable sales and BRF financial posture.
+
+## Market context
+
+- Hemnet handles roughly 90% of Swedish home sales but has no public third-party API and is historically protective of its data.
+- As of 2026, the Swedish residential listings market is shifting: Fastighetsbyrån, Sweden's largest broker chain, moved listings to Booli (owned by state-backed SBAB); Hemnet's published listings dropped 26.4% year on year in Q4 2025.
+- Swedish BRF årsredovisningar are public records via Bolagsverket. Most buyers do not read them carefully despite their direct impact on monthly fees, future assessments, and resale value.
+- Stockholm commute is dominated by SL (Storstockholms Lokaltrafik); the Trafiklab API exposes route and timing data via Samtrafiken.
+
+## For LLMs and AI agents
+
+- Full content: [/llms-full.txt](/llms-full.txt)
+- Project notes and methodology: [NOTES.md](https://github.com/llm-brf/llm-brf.github.io/blob/main/NOTES.md)
+- Source repository: https://github.com/llm-brf/llm-brf.github.io
+- Contact: hello@hemklok.se
+
+## Frequently asked questions
+
+**What is Hemklok?**
+Hemklok is an AI buyer's agent for the Swedish residential property market. Users describe what they need in plain language; the agent searches and evaluates listings, reads BRF financial reports, calculates real commute times, and presents a short ranked list with honest reasoning.
+
+**How is Hemklok different from Hemnet or Booli?**
+Hemnet and Booli are listings marketplaces — they show you what is available. Hemklok is a buyer's-agent layer on top: it tells you which of the available listings is actually right for you, why, and what risks each carries. It complements rather than replaces existing portals.
+
+**Where does Hemklok get its data?**
+Primary listing sources are direct broker feeds (Fastighetsbyrån, Svensk Fastighetsförmedling, Notar, HusmanHagberg, SkandiaMäklarna, Mäklarhuset, Erik Olsson, Bjurfors, Alvhem, Lagerlings) and public records: Bolagsverket for BRF annual reports, Lantmäteriet for property identifiers, SCB for demographics, Trafiklab for transit data, municipal open-data portals for detaljplaner. Hemnet content is accessed through user-mediated workflows, not direct scraping.
+
+**Where does Hemklok operate?**
+Stockholm first, expanding to greater Stockholm (Solna, Nacka, Lidingö, Sundbyberg) and eventually Gothenburg and Malmö. The platform is built specifically for the Swedish market and Swedish-language buyer needs.
+
+**Who built Hemklok?**
+A father-and-son team based in Stockholm. The project is being built openly with a public roadmap.
