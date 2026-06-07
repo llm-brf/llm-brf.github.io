@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hemklok — A thinking partner for the Swedish housing market</title>
+<meta name="description" content="Hemklok is an AI buyer's agent for finding and choosing apartments in Sweden. Built by a father and son.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,30..100&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE3;
+    --bg-warm: #EBE3D3;
+    --ink: #1A1F1B;
+    --ink-soft: #4A4B43;
+    --ink-muted: #7C7A6E;
+    --rule: #D8CFBE;
+    --accent: #B8492A;
+    --accent-soft: #D77A56;
+    --paper-shadow: rgba(26, 31, 27, 0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(216, 207, 190, 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(184, 73, 42, 0.05) 0%, transparent 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.12 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6;
+    mix-blend-mode: multiply;
+  }
+
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ---------- NAVIGATION ---------- */
+  nav {
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+    z-index: 10;
+  }
+  nav .container {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 50, 'wght' 500;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .brand::before {
+    content: '◐';
+    color: var(--accent);
+    margin-right: 6px;
+    font-size: 14px;
+    position: relative;
+    top: -2px;
+  }
+  .nav-right {
+    display: flex;
+    align-items: baseline;
+    gap: 32px;
+  }
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-links a:hover {
+    color: var(--accent);
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .nav-links a:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* ---------- LANGUAGE TOGGLE ---------- */
+  .lang-toggle {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    padding-left: 32px;
+    border-left: 1px solid var(--rule);
+  }
+  .lang-btn {
+    background: none;
+    border: none;
+    color: var(--ink-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    padding: 0;
+    transition: color 0.25s ease;
+    position: relative;
+  }
+  .lang-btn:hover {
+    color: var(--ink);
+  }
+  .lang-btn.active {
+    color: var(--accent);
+  }
+  .lang-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--accent);
+  }
+  .lang-divider {
+    color: var(--ink-muted);
+    opacity: 0.4;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    padding: 120px 0 100px;
+    position: relative;
+  }
+  .hero-tag {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: fadeUp 0.8s ease backwards;
+    animation-delay: 0.1s;
+  }
+  .hero-tag::before {
+    content: '';
+    width: 36px;
+    height: 1px;
+    background: var(--accent);
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 80, 'wght' 380;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    max-width: 14ch;
+    margin-bottom: 40px;
+    animation: fadeUp 1s ease backwards;
+    animation-delay: 0.2s;
+  }
+  h1 em {
+    font-style: italic;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100, 'wght' 350;
+    color: var(--accent);
+  }
+  .hero-lead {
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 52ch;
+    margin-bottom: 56px;
+    animation: fadeUp 1s ease backwards;
+    animation-delay: 0.35s;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    animation: fadeUp 1s ease backwards;
+    animation-delay: 0.5s;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-primary:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+  .btn-ghost:hover {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-arrow {
+    transition: transform 0.25s;
+  }
+  .btn:hover .btn-arrow {
+    transform: translateX(3px);
+  }
+
+  /* ---------- SECTION HEADER ---------- */
+  .section {
+    padding: 100px 0;
+    position: relative;
+  }
+  .section-label {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::before {
+    content: '§';
+    color: var(--accent);
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-style: italic;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 80, 'wght' 380;
+    font-size: clamp(36px, 4.5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 48px;
+    max-width: 18ch;
+  }
+  .section-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  /* ---------- HOW IT WORKS PREVIEW ---------- */
+  .how {
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: rgba(235, 227, 211, 0.4);
+  }
+  .how-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    margin-top: 40px;
+  }
+  .how-item {
+    padding: 32px 28px 32px 0;
+    border-right: 1px solid var(--rule);
+    position: relative;
+  }
+  .how-item:last-child { border-right: none; padding-right: 0; }
+  .how-item:not(:first-child) { padding-left: 28px; }
+  .how-num {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'wght' 300;
+    font-style: italic;
+    font-size: 48px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 20px;
+  }
+  .how-head {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 36, 'wght' 500;
+    font-size: 22px;
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+  .how-body {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ---------- ABOUT ---------- */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .about-side {
+    position: sticky;
+    top: 40px;
+  }
+  .about-prose {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 16, 'wght' 380;
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--ink);
+  }
+  .about-prose p {
+    margin-bottom: 1.4em;
+  }
+  .about-prose p:first-of-type::first-letter {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'wght' 400;
+    font-size: 64px;
+    float: left;
+    line-height: 0.85;
+    margin: 8px 12px 0 0;
+    color: var(--accent);
+  }
+  .about-prose em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .signature {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+  .signature strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ---------- NEWS / ROADMAP ---------- */
+  .news {
+    border-top: 1px solid var(--rule);
+  }
+  .news-list {
+    list-style: none;
+    margin-top: 48px;
+  }
+  .news-item {
+    display: grid;
+    grid-template-columns: 180px 1fr auto;
+    gap: 40px;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--rule);
+    align-items: start;
+    transition: padding-left 0.3s ease;
+  }
+  .news-item:hover {
+    padding-left: 12px;
+  }
+  .news-date {
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding-top: 6px;
+  }
+  .news-content h3 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 24, 'wght' 500;
+    font-size: 22px;
+    line-height: 1.25;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .news-content p {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 60ch;
+  }
+  .news-content em {
+    font-style: italic;
+  }
+  .news-status {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .status-now {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .status-next {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .status-later {
+    background: transparent;
+    color: var(--ink-muted);
+    border: 1px solid var(--rule);
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    padding: 60px 0 40px;
+    border-top: 1px solid var(--rule);
+    margin-top: 60px;
+    background: rgba(235, 227, 211, 0.5);
+  }
+  .footer-grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  .footer-brand {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 80, 'wght' 400;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--ink);
+  }
+  .footer-meta {
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+  .footer-meta a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    transition: border-color 0.2s;
+  }
+  .footer-meta a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ---------- ANIMATIONS ---------- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 820px) {
+    .container { padding: 0 24px; }
+    nav { padding: 20px 0; }
+    nav .container { gap: 16px; }
+    .nav-right { gap: 20px; width: 100%; justify-content: space-between; }
+    .nav-links { gap: 20px; }
+    .nav-links a { font-size: 13px; }
+    .lang-toggle { padding-left: 16px; }
+    .hero { padding: 80px 0 60px; }
+    .section { padding: 70px 0; }
+    .how-grid {
+      grid-template-columns: 1fr;
+    }
+    .how-item {
+      border-right: none;
+      border-bottom: 1px solid var(--rule);
+      padding: 28px 0 !important;
+    }
+    .how-item:last-child { border-bottom: none; }
+    .about-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .about-side { position: static; }
+    .news-item {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .news-status { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="#" class="brand">Hemklok</a>
+    <div class="nav-right">
+      <ul class="nav-links">
+        <li><a href="#how" data-en="Method" data-sv="Metod">Method</a></li>
+        <li><a href="#about" data-en="About" data-sv="Om oss">About</a></li>
+        <li><a href="#news" data-en="News" data-sv="Nyheter">News</a></li>
+      </ul>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en" aria-label="English">EN</button>
+        <span class="lang-divider">·</span>
+        <button class="lang-btn" data-lang="sv" aria-label="Svenska">SV</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-tag" data-en="In quiet development · Stockholm" data-sv="Utvecklas i tysthet · Stockholm">In quiet development · Stockholm</div>
+    <h1 data-en="A thinking partner for finding the <em>right</em> apartment in Sweden." data-sv="En tänkande partner för att hitta <em>rätt</em> lägenhet i Sverige.">A thinking partner for finding the <em>right</em> apartment in Sweden.</h1>
+    <p class="hero-lead" data-en="Hemklok is an AI buyer's agent built for the Swedish housing market. You describe what your life needs — we read the listings, the BRF reports, the commute, the history — and tell you what's actually worth your time." data-sv="Hemklok är en AI-köpagent byggd för den svenska bostadsmarknaden. Du beskriver vad ditt liv behöver — vi läser annonserna, BRF-rapporterna, pendlingen, historiken — och berättar vad som faktiskt är värt din tid.">
+      Hemklok is an AI buyer's agent built for the Swedish housing market. You describe what your life needs — we read the listings, the BRF reports, the commute, the history — and tell you what's actually worth your time.
+    </p>
+    <div class="hero-actions">
+      <a href="#about" class="btn btn-primary">
+        <span data-en="Read the story" data-sv="Läs historien">Read the story</span>
+        <span class="btn-arrow">→</span>
+      </a>
+      <a href="#news" class="btn btn-ghost" data-en="See what we're building" data-sv="Se vad vi bygger">See what we're building</a>
+    </div>
+  </div>
+</header>
+
+<section class="section how" id="how">
+  <div class="container">
+    <div class="section-label" data-en="The method" data-sv="Metoden">The method</div>
+    <h2 class="section-title" data-en="Less searching. <em>More choosing.</em>" data-sv="Mindre sökande. <em>Mer väljande.</em>">Less searching. <em>More choosing.</em></h2>
+    <div class="how-grid">
+      <div class="how-item">
+        <div class="how-num">i</div>
+        <h3 class="how-head" data-en="You talk, we listen" data-sv="Du pratar, vi lyssnar">You talk, we listen</h3>
+        <p class="how-body" data-en='A conversation, not a filter form. "I have a dog and a remote job, want under 30 minutes to T-Centralen, hate hearing my neighbors." That&apos;s enough to start.' data-sv='Ett samtal, inte ett filterformulär. "Jag har hund och jobbar hemifrån, vill ha under 30 minuter till T-Centralen, hatar att höra grannarna." Det räcker för att börja.'>A conversation, not a filter form. "I have a dog and a remote job, want under 30 minutes to T-Centralen, hate hearing my neighbors." That's enough to start.</p>
+      </div>
+      <div class="how-item">
+        <div class="how-num">ii</div>
+        <h3 class="how-head" data-en="We read everything" data-sv="Vi läser allt">We read everything</h3>
+        <p class="how-body" data-en="Listings, BRF annual reports, slutpriser, commute times, planned construction nearby. The boring homework you should be doing but probably aren't." data-sv="Annonser, BRF:ers årsredovisningar, slutpriser, restider, planerade byggen i närheten. Den tråkiga läxan du borde göra men antagligen inte gör.">Listings, BRF annual reports, slutpriser, commute times, planned construction nearby. The boring homework you should be doing but probably aren't.</p>
+      </div>
+      <div class="how-item">
+        <div class="how-num">iii</div>
+        <h3 class="how-head" data-en="You decide, better" data-sv="Du beslutar, bättre">You decide, better</h3>
+        <p class="how-body" data-en="A short, honest list. Why each one fits or doesn't. What to ask the broker. What the BRF is hiding in note 14. Where the risks are." data-sv="En kort, ärlig lista. Varför var och en passar eller inte. Vad du ska fråga mäklaren. Vad BRF:en döljer i not 14. Var riskerna finns.">A short, honest list. Why each one fits or doesn't. What to ask the broker. What the BRF is hiding in note 14. Where the risks are.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="about">
+  <div class="container">
+    <div class="about-grid">
+      <aside class="about-side">
+        <div class="section-label" data-en="About us" data-sv="Om oss">About us</div>
+        <h2 class="section-title" data-en="A father and son, <em>building in the open.</em>" data-sv="En far och son, <em>som bygger öppet.</em>">A father and son, <em>building in the open.</em></h2>
+      </aside>
+      <div class="about-prose">
+        <p data-en="We started Hemklok because buying an apartment in Sweden is harder than it should be — not in the way real estate is hard everywhere, but in a specifically Swedish way. The listings live on one site. The BRF's real financial health lives in a PDF nobody reads. The slutpris tells one story; the actual neighborhood tells another. And somewhere in the middle of all that, a person is supposed to make one of the biggest decisions of their life in three weekend viewings." data-sv="Vi startade Hemklok för att köpa lägenhet i Sverige är svårare än det borde vara — inte på det sätt fastigheter är svåra överallt, utan på ett specifikt svenskt vis. Annonserna bor på en enda sajt. BRF:ens verkliga ekonomiska hälsa bor i en PDF som ingen läser. Slutpriset berättar en historia; det faktiska området berättar en annan. Och någonstans mitt i allt detta ska en människa fatta ett av sitt livs största beslut på tre helgvisningar.">
+          We started Hemklok because buying an apartment in Sweden is harder than it should be — not in the way real estate is hard everywhere, but in a specifically Swedish way. The listings live on one site. The BRF's real financial health lives in a PDF nobody reads. The slutpris tells one story; the actual neighborhood tells another. And somewhere in the middle of all that, a person is supposed to make one of the biggest decisions of their life in three weekend viewings.
+        </p>
+        <p data-en="So we're building the thinking partner we wished we'd had. A son and a father — different generations, the same frustration. One of us is closer to the technology, the other closer to the years of having watched friends and family stumble through this process. We think there's something between <em>another listings site</em> and <em>an expensive buyer's broker</em>, and we think AI is finally good enough to be that thing." data-sv="Så vi bygger den tänkande partnern vi själva önskat oss. En son och en far — olika generationer, samma frustration. En av oss står närmare tekniken, den andra närmare åren av att ha sett vänner och familj snubbla genom processen. Vi tror att det finns något mellan <em>ännu en annonssajt</em> och <em>en dyr köpmäklare</em>, och vi tror att AI äntligen är tillräckligt bra för att vara den saken.">
+          So we're building the thinking partner we wished we'd had. A son and a father — different generations, the same frustration. One of us is closer to the technology, the other closer to the years of having watched friends and family stumble through this process. We think there's something between <em>another listings site</em> and <em>an expensive buyer's broker</em>, and we think AI is finally good enough to be that thing.
+        </p>
+        <p data-en="We're early. The site you're reading is a placeholder for something real. If you're someone who's looking for an apartment in Stockholm right now, or someone who builds in this space, we'd genuinely like to hear from you." data-sv="Vi är tidiga. Sajten du läser är en platshållare för något verkligt. Om du letar lägenhet i Stockholm just nu, eller om du bygger i den här branschen, vill vi gärna höra av dig.">
+          We're early. The site you're reading is a placeholder for something real. If you're someone who's looking for an apartment in Stockholm right now, or someone who builds in this space, we'd genuinely like to hear from you.
+        </p>
+        <div class="signature">
+          <strong>Hemklok</strong> · <span data-en="Building since 2026 · Stockholm" data-sv="Bygger sedan 2026 · Stockholm">Building since 2026 · Stockholm</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section news" id="news">
+  <div class="container">
+    <div class="section-label" data-en="News &amp; roadmap" data-sv="Nyheter &amp; färdplan">News &amp; roadmap</div>
+    <h2 class="section-title" data-en="What we're building, <em>in order.</em>" data-sv="Det vi bygger, <em>i ordning.</em>">What we're building, <em>in order.</em></h2>
+    <ul class="news-list">
+      <li class="news-item">
+        <div class="news-date" data-en="In progress" data-sv="Pågående">In progress</div>
+        <div class="news-content">
+          <h3 data-en="Conversational preference capture" data-sv="Konversationsbaserad preferensinsamling">Conversational preference capture</h3>
+          <p data-en="The first version of the agent — a real conversation that figures out what you actually need, not just a checkbox list. The hard part is reading between the lines: &quot;I have a dog&quot; means more than just &quot;pets allowed.&quot;" data-sv="Agentens första version — ett riktigt samtal som listar ut vad du faktiskt behöver, inte bara en kryssruta. Det svåra är att läsa mellan raderna: &quot;jag har hund&quot; betyder mer än bara &quot;husdjur tillåtna&quot;.">The first version of the agent — a real conversation that figures out what you actually need, not just a checkbox list. The hard part is reading between the lines: "I have a dog" means more than just "pets allowed."</p>
+        </div>
+        <span class="news-status status-now" data-en="Now" data-sv="Nu">Now</span>
+      </li>
+      <li class="news-item">
+        <div class="news-date" data-en="In progress" data-sv="Pågående">In progress</div>
+        <div class="news-content">
+          <h3 data-en="BRF annual report analysis" data-sv="Analys av BRF-årsredovisningar">BRF annual report analysis</h3>
+          <p data-en="Reading the <em>årsredovisning</em> the way a careful buyer would. Debt per square meter. Maintenance backlog. Note-14 surprises. Renovation plans the seller forgot to mention." data-sv="Att läsa <em>årsredovisningen</em> som en noggrann köpare skulle. Skuld per kvadratmeter. Underhållsskuld. Överraskningar i not 14. Renoveringsplaner säljaren glömde nämna.">Reading the <em>årsredovisning</em> the way a careful buyer would. Debt per square meter. Maintenance backlog. Note-14 surprises. Renovation plans the seller forgot to mention.</p>
+        </div>
+        <span class="news-status status-now" data-en="Now" data-sv="Nu">Now</span>
+      </li>
+      <li class="news-item">
+        <div class="news-date">Q2 2026</div>
+        <div class="news-content">
+          <h3 data-en="Commute intelligence" data-sv="Pendlingsanalys">Commute intelligence</h3>
+          <p data-en="Real travel times to the places you actually go — work, family, the gym — using SL and Trafiklab data, not a Google Maps best-case from the front door." data-sv="Verkliga restider till platserna du faktiskt åker till — jobb, familj, gymmet — baserat på data från SL och Trafiklab, inte ett Google Maps bästafall från ytterdörren.">Real travel times to the places you actually go — work, family, the gym — using SL and Trafiklab data, not a Google Maps best-case from the front door.</p>
+        </div>
+        <span class="news-status status-next" data-en="Next" data-sv="Snart">Next</span>
+      </li>
+      <li class="news-item">
+        <div class="news-date">Q3 2026</div>
+        <div class="news-content">
+          <h3 data-en="Historical price &amp; future value modeling" data-sv="Historiska priser &amp; framtida värdemodellering">Historical price &amp; future value modeling</h3>
+          <p data-en="Honest analysis of what comparable apartments actually sold for, what the neighborhood is doing, and where the value is likely going — without the magical-thinking optimism most price estimates carry." data-sv="Ärlig analys av vad jämförbara lägenheter faktiskt såldes för, vart området är på väg, och vart värdet sannolikt är på väg — utan den önsketänkande optimism som de flesta prisuppskattningar bär på.">Honest analysis of what comparable apartments actually sold for, what the neighborhood is doing, and where the value is likely going — without the magical-thinking optimism most price estimates carry.</p>
+        </div>
+        <span class="news-status status-next" data-en="Next" data-sv="Snart">Next</span>
+      </li>
+      <li class="news-item">
+        <div class="news-date">Q3 2026</div>
+        <div class="news-content">
+          <h3 data-en="Continuous market monitoring" data-sv="Kontinuerlig marknadsbevakning">Continuous market monitoring</h3>
+          <p data-en="The agent doesn't go to sleep. New listings get evaluated against your preferences, and you only hear about the ones that genuinely beat what's already on your shortlist." data-sv="Agenten sover aldrig. Nya annonser utvärderas mot dina preferenser, och du får bara höra om de som verkligen slår det som redan finns på din kortlista.">The agent doesn't go to sleep. New listings get evaluated against your preferences, and you only hear about the ones that genuinely beat what's already on your shortlist.</p>
+        </div>
+        <span class="news-status status-next" data-en="Next" data-sv="Snart">Next</span>
+      </li>
+      <li class="news-item">
+        <div class="news-date">Q4 2026</div>
+        <div class="news-content">
+          <h3 data-en="Broker outreach &amp; viewing logistics" data-sv="Mäklarkontakt &amp; visningslogistik">Broker outreach &amp; viewing logistics</h3>
+          <p data-en="Drafts the questions, manages the follow-ups, tracks the responses. You approve, we send. Human in the loop, less inbox in your day." data-sv="Skriver utkasten, sköter uppföljningarna, spårar svaren. Du godkänner, vi skickar. Människa i loopen, mindre inkorg i din dag.">Drafts the questions, manages the follow-ups, tracks the responses. You approve, we send. Human in the loop, less inbox in your day.</p>
+        </div>
+        <span class="news-status status-later" data-en="Later" data-sv="Senare">Later</span>
+      </li>
+      <li class="news-item">
+        <div class="news-date">Q4 2026</div>
+        <div class="news-content">
+          <h3 data-en="Viewing checklists &amp; negotiation guidance" data-sv="Visningschecklistor &amp; förhandlingsråd">Viewing checklists &amp; negotiation guidance</h3>
+          <p data-en="Personalized to the specific apartment — what to look for, what to ask, what a fair counter-offer looks like given the comparable sales and the BRF situation." data-sv="Anpassade till just den lägenheten — vad du ska titta efter, vad du ska fråga, vad ett rimligt motbud ser ut givet jämförbara försäljningar och BRF-situationen.">Personalized to the specific apartment — what to look for, what to ask, what a fair counter-offer looks like given the comparable sales and the BRF situation.</p>
+        </div>
+        <span class="news-status status-later" data-en="Later" data-sv="Senare">Later</span>
+      </li>
+      <li class="news-item">
+        <div class="news-date">2027</div>
+        <div class="news-content">
+          <h3 data-en="Seller side" data-sv="Säljarsidan">Seller side</h3>
+          <p data-en="The other half of the problem. If we can help buyers make smarter choices, we can help sellers price honestly and present clearly. Coming after the buyer experience is solid." data-sv="Den andra halvan av problemet. Om vi kan hjälpa köpare fatta smartare beslut kan vi hjälpa säljare prissätta ärligt och presentera tydligt. Kommer efter att köpupplevelsen sitter.">The other half of the problem. If we can help buyers make smarter choices, we can help sellers price honestly and present clearly. Coming after the buyer experience is solid.</p>
+        </div>
+        <span class="news-status status-later" data-en="Later" data-sv="Senare">Later</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">Hemklok</div>
+      <div class="footer-meta">
+        <span data-en="Built quietly in Stockholm" data-sv="Byggt i tysthet i Stockholm">Built quietly in Stockholm</span> · <a href="mailto:hello@hemklok.se">hello@hemklok.se</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function() {
+    const TITLES = {
+      en: "Hemklok — A thinking partner for the Swedish housing market",
+      sv: "Hemklok — En tänkande partner för den svenska bostadsmarknaden"
+    };
+
+    function setLanguage(lang) {
+      if (lang !== 'en' && lang !== 'sv') lang = 'en';
+      document.documentElement.lang = lang;
+      document.title = TITLES[lang];
+
+      document.querySelectorAll('[data-' + lang + ']').forEach(function(el) {
+        el.innerHTML = el.getAttribute('data-' + lang);
+      });
+
+      document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+    }
+
+    // Detect browser language on first load: Swedish if browser is Swedish, else English
+    const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    const initialLang = browserLang.startsWith('sv') ? 'sv' : 'en';
+    setLanguage(initialLang);
+
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        setLanguage(btn.dataset.lang);
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>
