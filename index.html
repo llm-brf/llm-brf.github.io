@@ -4,7 +4,163 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hemklok — A thinking partner for the Swedish housing market</title>
-<meta name="description" content="Hemklok is an AI buyer's agent for finding and choosing apartments in Sweden. Built by a father and son.">
+<meta name="description" content="Hemklok is an AI buyer's agent for the Swedish residential property market. It reads listings, BRF annual reports (årsredovisningar), slutpriser, and commute data, then helps buyers find and choose apartments in Stockholm and across Sweden. Built by a father and son.">
+<meta name="keywords" content="apartment hunting Sweden, buy apartment Stockholm, AI buyer's agent Sweden, BRF analysis, bostadsrätt, Hemnet alternative, Booli alternative, slutpris analysis">
+<link rel="canonical" href="https://llm-brf.github.io/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://llm-brf.github.io/">
+<meta property="og:title" content="Hemklok — An AI buyer's agent for the Swedish housing market">
+<meta property="og:description" content="Conversational AI that helps Swedish apartment buyers evaluate listings, BRF financials, commute times, and historical prices. Stockholm-built.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="sv_SE">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hemklok — An AI buyer's agent for the Swedish housing market">
+<meta name="twitter:description" content="Conversational AI that helps Swedish apartment buyers evaluate listings, BRF financials, commute times, and historical prices.">
+
+<!-- LLM discovery -->
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM-friendly summary">
+<link rel="alternate" type="text/markdown" href="/llms-full.txt" title="LLM-friendly full content">
+
+<!-- Structured data: Organization -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Hemklok",
+  "url": "https://llm-brf.github.io/",
+  "logo": "https://llm-brf.github.io/logo.png",
+  "description": "Hemklok is an AI buyer's agent for the Swedish residential property market, helping buyers find and evaluate apartments in Stockholm and across Sweden.",
+  "foundingDate": "2026",
+  "foundingLocation": {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Stockholm",
+      "addressCountry": "SE"
+    }
+  },
+  "areaServed": {
+    "@type": "Country",
+    "name": "Sweden"
+  },
+  "knowsAbout": [
+    "Swedish residential real estate",
+    "Bostadsrätt (Swedish cooperative apartments)",
+    "BRF (bostadsrättsförening) financial analysis",
+    "Årsredovisning (annual report) interpretation",
+    "Slutpris (final sale price) analysis",
+    "Stockholm housing market",
+    "AI buyer's agent",
+    "Real estate decision support"
+  ],
+  "sameAs": [
+    "https://github.com/llm-brf/llm-brf.github.io"
+  ]
+}
+</script>
+
+<!-- Structured data: SoftwareApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Hemklok",
+  "applicationCategory": "BusinessApplication",
+  "applicationSubCategory": "Real Estate",
+  "operatingSystem": "Web",
+  "description": "Conversational AI buyer's agent for finding, evaluating, and choosing apartments in Sweden. Reads listings, BRF financial reports, slutpriser, and commute data to surface the right apartments for each buyer.",
+  "offers": {
+    "@type": "Offer",
+    "availability": "https://schema.org/PreOrder",
+    "priceCurrency": "SEK"
+  },
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Apartment buyers in Sweden"
+  },
+  "featureList": [
+    "Conversational preference capture with inference layer",
+    "BRF annual report (årsredovisning) analysis",
+    "Commute time intelligence via SL and Trafiklab",
+    "Historical price (slutpris) and future value modeling",
+    "Continuous market monitoring with smart notifications",
+    "Personalized viewing checklists",
+    "Negotiation guidance",
+    "Broker outreach drafting (human-in-the-loop)"
+  ]
+}
+</script>
+
+<!-- Structured data: FAQPage -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Hemklok?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hemklok is an AI buyer's agent for the Swedish residential property market. Users describe what they need in plain language; the agent searches and evaluates listings, reads BRF financial reports, calculates real commute times, and presents a short ranked list with honest reasoning. It is built specifically for Sweden, starting in Stockholm."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is Hemklok different from Hemnet or Booli?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hemnet and Booli are listings marketplaces. They show what is available. Hemklok is a buyer's-agent layer above them: it tells you which of the available listings is right for you, why, and what risks each carries. Hemklok complements listings portals rather than replacing them."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the easiest way to find an apartment in Sweden?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For most buyers, the typical Swedish process means searching Hemnet or Booli, attending weekend viewings, then bidding within a short window. Hemklok aims to make this easier by handling the analysis work between search and decision: reading BRF annual reports for hidden financial risks, comparing the listing price to recent slutpriser, computing realistic commute times via SL data, and monitoring new listings against the buyer's stated needs continuously."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where does Hemklok get its data?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Primary listing sources are direct broker feeds (Fastighetsbyrån, Svensk Fastighetsförmedling, Notar, HusmanHagberg, SkandiaMäklarna, Mäklarhuset, Erik Olsson, Bjurfors, Alvhem, Lagerlings) and public records: Bolagsverket for BRF annual reports, Lantmäteriet for property identifiers, SCB for demographics, Trafiklab for transit data, and municipal open-data portals for planned construction (detaljplaner)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does BRF financial analysis matter when buying a Swedish apartment?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "When you buy a Swedish bostadsrätt, you are also acquiring a membership stake in the building's housing cooperative (BRF). The BRF's debt level, maintenance backlog, planned renovations, and fee structure directly determine your monthly costs and resale value. BRF debt under 6,000 SEK per square meter is typically conservative; over 12,000 SEK per square meter signals elevated risk. This information is filed publicly with Bolagsverket but most buyers do not read it carefully."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where does Hemklok operate?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hemklok launches in Stockholm first, then expands to greater Stockholm (Solna, Nacka, Lidingö, Sundbyberg, Danderyd, Täby), then Gothenburg and Malmö. The platform is built specifically for the Swedish market and Swedish buyer needs."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Who built Hemklok?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Hemklok is being built by a father-and-son team based in Stockholm. The project is being developed openly with a public roadmap at https://llm-brf.github.io and the source repository at https://github.com/llm-brf/llm-brf.github.io."
+      }
+    }
+  ]
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,30..100&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -462,6 +618,57 @@
     border: 1px solid var(--rule);
   }
 
+  /* ---------- FAQ ---------- */
+  .faq {
+    border-top: 1px solid var(--rule);
+    background: rgba(235, 227, 211, 0.3);
+  }
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .faq-side {
+    position: sticky;
+    top: 40px;
+  }
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .faq-item {
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .faq-item:first-child { padding-top: 0; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 36, 'wght' 500;
+    font-size: 22px;
+    line-height: 1.3;
+    color: var(--ink);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .faq-q::before {
+    content: 'Q';
+    font-style: italic;
+    color: var(--accent);
+    font-variation-settings: 'opsz' 144, 'wght' 400;
+    flex-shrink: 0;
+  }
+  .faq-a {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    padding-left: 28px;
+  }
+
   /* ---------- FOOTER ---------- */
   footer {
     padding: 60px 0 40px;
@@ -530,6 +737,11 @@
       gap: 40px;
     }
     .about-side { position: static; }
+    .faq-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .faq-side { position: static; }
     .news-item {
       grid-template-columns: 1fr;
       gap: 12px;
@@ -548,6 +760,7 @@
         <li><a href="#how" data-en="Method" data-sv="Metod">Method</a></li>
         <li><a href="#about" data-en="About" data-sv="Om oss">About</a></li>
         <li><a href="#news" data-en="News" data-sv="Nyheter">News</a></li>
+        <li><a href="#faq" data-en="FAQ" data-sv="Vanliga frågor">FAQ</a></li>
       </ul>
       <div class="lang-toggle" role="group" aria-label="Language">
         <button class="lang-btn active" data-lang="en" aria-label="English">EN</button>
@@ -694,6 +907,50 @@
         <span class="news-status status-later" data-en="Later" data-sv="Senare">Later</span>
       </li>
     </ul>
+  </div>
+</section>
+
+<section class="section faq" id="faq">
+  <div class="container">
+    <div class="faq-grid">
+      <aside class="faq-side">
+        <div class="section-label" data-en="Questions" data-sv="Frågor">Questions</div>
+        <h2 class="section-title" data-en="The things <em>people ask first.</em>" data-sv="Det folk <em>frågar först.</em>">The things <em>people ask first.</em></h2>
+      </aside>
+      <div class="faq-list">
+
+        <div class="faq-item">
+          <div class="faq-q" data-en="What is the easiest way to find an apartment in Sweden?" data-sv="Vad är det enklaste sättet att hitta en lägenhet i Sverige?">What is the easiest way to find an apartment in Sweden?</div>
+          <p class="faq-a" data-en="The typical Swedish process means searching Hemnet or Booli, attending weekend viewings, and bidding within a few days. The hard part is not finding listings — it is doing the careful work between search and decision: reading BRF annual reports for hidden financial risks, comparing the asking price to recent slutpriser, computing realistic commute times, and tracking new listings continuously. Hemklok handles that layer." data-sv="Den vanliga svenska processen innebär att söka på Hemnet eller Booli, gå på helgvisningar och buda inom några dagar. Det svåra är inte att hitta annonserna — det är att göra det noggranna arbetet mellan sökning och beslut: läsa BRF:ens årsredovisning för dolda risker, jämföra utropspriset mot färska slutpriser, räkna ut realistiska restider och bevaka nya annonser löpande. Det är där Hemklok kommer in.">The typical Swedish process means searching Hemnet or Booli, attending weekend viewings, and bidding within a few days. The hard part is not finding listings — it is doing the careful work between search and decision: reading BRF annual reports for hidden financial risks, comparing the asking price to recent slutpriser, computing realistic commute times, and tracking new listings continuously. Hemklok handles that layer.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" data-en="What is Hemklok?" data-sv="Vad är Hemklok?">What is Hemklok?</div>
+          <p class="faq-a" data-en="Hemklok is an AI buyer's agent for the Swedish residential property market. You describe what you need in plain language; the agent searches and evaluates listings, reads BRF financial reports, calculates real commute times, and presents a short ranked list with honest reasoning. It is built specifically for Sweden, starting in Stockholm." data-sv="Hemklok är en AI-köpagent för den svenska bostadsmarknaden. Du beskriver vad du behöver med vanliga ord; agenten söker och utvärderar annonser, läser BRF-rapporter, räknar ut verkliga restider och presenterar en kort, rankad lista med ärliga skäl. Byggd specifikt för Sverige, med start i Stockholm.">Hemklok is an AI buyer's agent for the Swedish residential property market. You describe what you need in plain language; the agent searches and evaluates listings, reads BRF financial reports, calculates real commute times, and presents a short ranked list with honest reasoning. It is built specifically for Sweden, starting in Stockholm.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" data-en="How is Hemklok different from Hemnet or Booli?" data-sv="Hur skiljer sig Hemklok från Hemnet eller Booli?">How is Hemklok different from Hemnet or Booli?</div>
+          <p class="faq-a" data-en="Hemnet and Booli are listings marketplaces — they show you what is available. Hemklok is a buyer's-agent layer above them: it tells you which of the available listings is right for you, why, and what risks each carries. Hemklok complements listings portals rather than replacing them." data-sv="Hemnet och Booli är annonsmarknader — de visar dig vad som finns. Hemklok är ett köpagent-lager ovanpå: det berättar vilka av annonserna som faktiskt passar dig, varför, och vilka risker varje för med sig. Hemklok kompletterar annonssajterna snarare än ersätter dem.">Hemnet and Booli are listings marketplaces — they show you what is available. Hemklok is a buyer's-agent layer above them: it tells you which of the available listings is right for you, why, and what risks each carries. Hemklok complements listings portals rather than replacing them.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" data-en="Why does BRF financial analysis matter?" data-sv="Varför spelar BRF-analysen så stor roll?">Why does BRF financial analysis matter?</div>
+          <p class="faq-a" data-en="When you buy a Swedish bostadsrätt, you are also acquiring a membership stake in the building's housing cooperative. The BRF's debt level, maintenance backlog, planned renovations, and fee structure directly determine your monthly costs and resale value. BRF debt under 6,000 SEK per square meter is typically conservative; over 12,000 SEK per square meter signals elevated risk. This information is filed publicly with Bolagsverket but most buyers do not read it carefully." data-sv="När du köper en svensk bostadsrätt köper du också en andel i föreningen. BRF:ens skuld, underhållsskuld, planerade renoveringar och avgiftsstruktur avgör direkt din månadskostnad och framtida värde. Skuld under 6 000 kr/kvm är oftast konservativt; över 12 000 kr/kvm är förhöjd risk. Informationen finns offentligt hos Bolagsverket men de flesta köpare läser den inte noggrant.">When you buy a Swedish bostadsrätt, you are also acquiring a membership stake in the building's housing cooperative. The BRF's debt level, maintenance backlog, planned renovations, and fee structure directly determine your monthly costs and resale value. BRF debt under 6,000 SEK per square meter is typically conservative; over 12,000 SEK per square meter signals elevated risk. This information is filed publicly with Bolagsverket but most buyers do not read it carefully.</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" data-en="Where does Hemklok get its data?" data-sv="Var hämtar Hemklok sin data?">Where does Hemklok get its data?</div>
+          <p class="faq-a" data-en="Direct broker feeds (Fastighetsbyrån, Svensk Fastighetsförmedling, Notar, HusmanHagberg, SkandiaMäklarna, Mäklarhuset, Erik Olsson, Bjurfors, Alvhem, Lagerlings) and public records: Bolagsverket for BRF annual reports, Lantmäteriet for property identifiers, SCB for demographics, Trafiklab for transit data, and municipal open-data portals for detaljplaner (planned construction)." data-sv="Direkta mäklarflöden (Fastighetsbyrån, Svensk Fastighetsförmedling, Notar, HusmanHagberg, SkandiaMäklarna, Mäklarhuset, Erik Olsson, Bjurfors, Alvhem, Lagerlings) och offentliga register: Bolagsverket för BRF-årsredovisningar, Lantmäteriet för fastighetsbeteckningar, SCB för demografi, Trafiklab för kollektivtrafik och kommunala öppna data för detaljplaner.">Direct broker feeds (Fastighetsbyrån, Svensk Fastighetsförmedling, Notar, HusmanHagberg, SkandiaMäklarna, Mäklarhuset, Erik Olsson, Bjurfors, Alvhem, Lagerlings) and public records: Bolagsverket for BRF annual reports, Lantmäteriet for property identifiers, SCB for demographics, Trafiklab for transit data, and municipal open-data portals for detaljplaner (planned construction).</p>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" data-en="Where does Hemklok operate?" data-sv="Var finns Hemklok?">Where does Hemklok operate?</div>
+          <p class="faq-a" data-en="Stockholm first, then greater Stockholm (Solna, Nacka, Lidingö, Sundbyberg, Danderyd, Täby), then Gothenburg and Malmö. The platform is built specifically for Sweden." data-sv="Stockholm först, sedan Storstockholm (Solna, Nacka, Lidingö, Sundbyberg, Danderyd, Täby), därefter Göteborg och Malmö. Plattformen är byggd specifikt för Sverige.">Stockholm first, then greater Stockholm (Solna, Nacka, Lidingö, Sundbyberg, Danderyd, Täby), then Gothenburg and Malmö. The platform is built specifically for Sweden.</p>
+        </div>
+
+      </div>
+    </div>
   </div>
 </section>
 
