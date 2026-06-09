@@ -1,0 +1,182 @@
+openapi: 3.0.3
+info:
+  title: Real Estate Data API
+  description: >
+    Read-only API for Swedish real estate market data sourced from Booli.
+    Covers completed sales transactions and property advertisements.
+  version: 0.1.0
+  contact:
+    url: https://github.com/asapozhkov
+
+servers:
+  - url: https://wqyh106uo0.execute-api.eu-north-1.amazonaws.com
+    description: Production
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /sales/stats/avg-price-per-sqm:
+    get:
+      summary: Average sale price per square metre
+      operationId: getSalesStatsAvgPricePerSqm
+      description: >
+        Returns the average final sale price per square metre (kr/m²) across
+        completed deals in the database. Both query parameters are optional and
+        can be combined. The response always includes the date range and number
+        of deals that contributed to the average so the caller can judge
+        statistical significance.
+      parameters:
+        - name: year
+          in: query
+          required: false
+          description: Restrict to deals sold in this calendar year.
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2100
+          example: 2025
+        - name: rooms
+          in: query
+          required: false
+          description: >
+            Restrict to deals where the number of rooms matches exactly.
+            Accepts integers and half-values (e.g. 3 or 3.5).
+          schema:
+            type: number
+            minimum: 0.5
+            maximum: 20
+          example: 3
+      responses:
+        "200":
+          description: Average successfully computed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvgPricePerSqm"
+              examples:
+                all_data:
+                  summary: No filters — all 375 deals
+                  value:
+                    avg_kr_per_m2: 29112
+                    sample_count: 375
+                    from_date: "2012-11-02"
+                    to_date: "2026-06-03"
+                    filters:
+                      year: null
+                      rooms: null
+                by_year:
+                  summary: Filter by year
+                  value:
+                    avg_kr_per_m2: 25558
+                    sample_count: 25
+                    from_date: "2025-01-07"
+                    to_date: "2025-12-22"
+                    filters:
+                      year: 2025
+                      rooms: null
+                by_rooms:
+                  summary: Filter by number of rooms
+                  value:
+                    avg_kr_per_m2: 27095
+                    sample_count: 90
+                    from_date: "2012-11-02"
+                    to_date: "2026-06-03"
+                    filters:
+                      year: null
+                      rooms: 3.0
+                by_year_and_rooms:
+                  summary: Filter by year and rooms combined
+                  value:
+                    avg_kr_per_m2: 22639
+                    sample_count: 7
+                    from_date: "2025-01-07"
+                    to_date: "2025-12-10"
+                    filters:
+                      year: 2025
+                      rooms: 3.0
+        "400":
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                bad_year:
+                  value:
+                    error: year must be an integer
+                bad_rooms:
+                  value:
+                    error: rooms must be a number
+        "404":
+          description: No deals match the given filters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: no data found for the given filters
+
+components:
+  schemas:
+    AvgPricePerSqm:
+      type: object
+      required:
+        - avg_kr_per_m2
+        - sample_count
+        - from_date
+        - to_date
+        - filters
+      properties:
+        avg_kr_per_m2:
+          type: integer
+          description: Average final sale price per square metre in Swedish kronor.
+          example: 25558
+        sample_count:
+          type: integer
+          description: Number of deals that contributed to the average.
+          example: 25
+        from_date:
+          type: string
+          format: date
+          description: Earliest sale date among the matched deals.
+          example: "2025-01-07"
+        to_date:
+          type: string
+          format: date
+          description: Latest sale date among the matched deals.
+          example: "2025-12-22"
+        filters:
+          type: object
+          description: Echo of the filters that were applied.
+          properties:
+            year:
+              type: integer
+              nullable: true
+              example: 2025
+            rooms:
+              type: number
+              nullable: true
+              example: 3.0
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: year must be an integer
