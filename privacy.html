@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Hemklok</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,30..100&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE3; --ink: #1A1F1B; --ink-soft: #4A4B43;
+    --ink-muted: #7C7A6E; --rule: #D8CFBE; --accent: #B8492A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 680px; margin: 0 auto; padding: 80px 32px; }
+  .back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--ink-muted); text-decoration: none;
+    letter-spacing: 0.04em; margin-bottom: 56px;
+    transition: color 0.2s;
+  }
+  .back:hover { color: var(--accent); }
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 50, 'wght' 500;
+    font-size: 18px; color: var(--ink); margin-bottom: 8px;
+  }
+  .brand::before { content: '◐'; color: var(--accent); margin-right: 6px; font-size: 13px; }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 80, 'wght' 380;
+    font-size: 42px; line-height: 1.05; letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .updated { font-size: 13px; color: var(--ink-muted); margin-bottom: 56px; letter-spacing: 0.04em; }
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 24, 'wght' 500;
+    font-size: 20px; margin: 40px 0 12px;
+  }
+  p { color: var(--ink-soft); margin-bottom: 1em; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+  hr { border: none; border-top: 1px solid var(--rule); margin: 48px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back">← Hemklok</a>
+  <div class="brand">Hemklok</div>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: June 2026</p>
+
+  <p>Hemklok is an AI buyer's agent for the Swedish housing market. This policy explains what data we collect and how we use it.</p>
+
+  <h2>What we collect</h2>
+  <p>Hemklok does not collect, store, or sell personal data. The service is a read-only AI assistant — it reads publicly available real estate market data and responds to your questions. No account is required and no information you share in the conversation is retained after the session ends.</p>
+
+  <h2>The ChatGPT GPT</h2>
+  <p>The Hemklok beta runs as a custom GPT on ChatGPT (OpenAI). Conversations are processed by OpenAI under their own <a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="https://openai.com/policies/usage-policies" target="_blank" rel="noopener">Usage Policies</a>. We do not receive or store any conversation data from OpenAI.</p>
+
+  <h2>Real estate data API</h2>
+  <p>When you use the Hemklok GPT, it may call our real estate data API to retrieve average sale prices from Booli's completed-transactions dataset. This API call contains only query parameters (year, number of rooms) — no personal information is transmitted.</p>
+
+  <h2>This website</h2>
+  <p>llm-brf.github.io is a static site hosted on GitHub Pages. We do not run analytics, tracking pixels, or advertising scripts. GitHub may collect standard server logs as described in <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's Privacy Statement</a>.</p>
+
+  <h2>Cookies</h2>
+  <p>This website does not set any cookies.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy? Reach us at <a href="mailto:hello@hemklok.se">hello@hemklok.se</a>.</p>
+
+  <hr>
+  <p style="font-size:13px; color:var(--ink-muted);">Hemklok · Stockholm, Sweden</p>
+</div>
+</body>
+</html>
