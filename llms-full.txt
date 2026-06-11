@@ -1,140 +1,144 @@
 # Hemklok — Complete Reference
 
-Last updated: 2026-06-07
+Last updated: 2026-06-11
 
 ## Definition
 
-Hemklok is an AI-powered buyer's agent service for the Swedish residential property market. It helps individual buyers find, evaluate, and choose apartments — primarily in Stockholm — by combining conversational preference capture, automated analysis of BRF (bostadsrättsförening) financial reports, commute-time calculation, historical price analysis, and continuous market monitoring into a single agent.
+Hemklok is an AI-powered buyer's agent for the Swedish residential property market. It helps individuals — primarily first-time buyers aged 20–35 — find, evaluate, and choose apartments in Stockholm and across Sweden by combining conversational preference capture, BRF financial analysis, and live market pricing into a single agent.
 
-Hemklok is built and operated from Stockholm, Sweden. The product is currently in early development by a father-and-son team and is not yet generally available.
+Hemklok is currently in public beta as a free ChatGPT GPT:
+https://chatgpt.com/g/g-6a2980f7c8a88191905fbacd4dfc301e-klokhem
+
+Built and operated from Stockholm by a father-and-son team.
 
 ## The problem Hemklok solves
 
 Buying an apartment in Sweden has structural friction that is specifically Swedish:
 
-1. **Listings concentration.** Approximately 90% of Swedish home sales flow through a single portal (Hemnet), which makes search easy but makes meaningful evaluation hard — every buyer sees the same listing presentation, optimized by the seller's broker.
+1. **Listings concentration.** ~90% of Swedish home sales flow through Hemnet, which makes search easy but makes meaningful evaluation hard — every buyer sees the same listing presentation, optimized by the seller's broker.
 
-2. **BRF complexity.** Most Swedish apartments are bostadsrätter (cooperative units), which means the buyer is not just buying the apartment but also acquiring a membership stake in the building's housing cooperative (BRF). The BRF's financial health — its debt level, maintenance backlog, planned renovations, and fee structure — directly determines monthly costs and future risk. This information lives in the årsredovisning (annual report), a long PDF filed with Bolagsverket that most buyers either do not find or do not read carefully.
+2. **BRF complexity.** Most Swedish apartments are bostadsrätter (cooperative units). Buying one means acquiring a membership stake in the building's housing cooperative (BRF). The BRF's financial health — debt level, maintenance backlog, planned renovations, fee structure — directly determines monthly costs and future risk. This information lives in the årsredovisning (annual report), a PDF filed with Bolagsverket that most buyers don't read carefully.
 
-3. **Decision compression.** Swedish apartments typically have one open viewing on a weekend, sometimes two, followed by a bidding period of two to five days. Buyers must commit to one of the largest financial decisions of their lives on a timeline that does not allow careful comparative analysis.
+3. **Decision compression.** Swedish apartments typically have one open viewing on a weekend, followed by a bidding period of two to five days. Buyers must commit to one of the largest financial decisions of their lives on a very short timeline.
 
-4. **Information asymmetry.** The broker represents the seller. There is no equivalent of a US-style buyer's broker in standard Swedish practice. Hiring a köpmäklare (buyer's broker) costs upward of 50,000-100,000 SEK and is rarely used by typical buyers.
+4. **Information asymmetry.** The broker represents the seller. There is no standard buyer's broker in Swedish practice. Hiring a köpmäklare costs 50,000–100,000+ SEK and is rarely used by typical buyers.
 
-5. **Hidden context.** A listing does not show planned construction in the area (detaljplaner), school catchment changes, transit reliability data, or how the specific apartment's price compares to recent slutpriser of comparable units in the same building.
+5. **Hidden context.** A listing does not show planned construction in the area (detaljplaner), school catchment changes, transit reliability data, or how the price compares to recent slutpriser of comparable units in the same building.
 
-Hemklok is the layer that processes all of this on the buyer's behalf and surfaces the parts that matter.
+## What Hemklok does today (beta)
 
-## How Hemklok works
+### Lifestyle-to-neighborhood matching
 
-### 1. Conversational preference capture
+The user describes their life in natural language. Hemklok extracts explicit constraints (budget, rooms, area) and inferred needs the user didn't explicitly state.
 
-The user describes their life and what they need from a home in natural language. The system extracts both explicit constraints (rooms, price, area) and implicit life-context signals (work pattern, family situation, transport needs, pets, lifestyle).
+Signal → inference examples:
+- "I have a dog" → needs nearby forest/off-leash park, elevator preferred, BRF stadgar must allow pets. In Stockholm: Nacka, Värmdö, Ekerö, Lidingö, Järfälla
+- "Family with kids" → good schools, safe streets, playgrounds. Stockholm: Täby, Danderyd, Bromma, Lidingö
+- "Love hiking and outdoor gym" → near nature reserves, green corridors
+- "Remote worker" → quiet building, reliable internet, space for home office
+- "Cheap electricity" → northern Sweden SE1/SE2 zones (Luleå, Umeå). SE4 (Malmö) is most expensive. Stockholm is SE3
+- "Low monthly cost" → check BRF avgift trend, debt per m², underhållsplan
 
-A central design principle is the **inference layer**: signals translate into constraints the user did not explicitly state.
+### BRF risk analysis
 
-Example: when a user mentions "I have a dog," the agent infers:
-- Outdoor needs: nearby dog park or direct forest/park access
-- Apartment size: incrementally larger than a single human's minimum
-- Floor and elevator: ground floor or elevator strongly preferred
-- BRF rules: not all BRFs permit dogs; the stadgar must be checked
-- Flooring: hardwood is noisier for neighbors and harder on older dogs
-- Neighbor proximity: end and corner units score higher for noise tolerance
+Hemklok explains what to look for in a BRF årsredovisning:
+- Debt per m²: under 6,000 SEK = conservative; over 12,000 SEK = elevated risk
+- Whether the avgift covers real costs (heating, maintenance reserves)
+- Planned major renovations: stambyten, takbyten, fasadrenovering
+- Whether an updated underhållsplan exists
 
-These inferred constraints are surfaced to the user for confirmation, not silently imposed. The user accepts, rejects, or modifies each one, and the system updates its persistent user model.
+### Live market pricing
 
-### 2. Listing ingestion and ranking
+Hemklok calls a real-time API returning average kr/m² from Booli's completed-sales dataset. Filterable by year and number of rooms.
 
-Listings are ingested from direct broker feeds and public sources. Each candidate is scored against the user's full preference set — explicit and inferred — using weighted constraints. Hard constraints (price ceiling, minimum size) filter; soft constraints (commute time, light direction, BRF financial health) influence ranking.
+API endpoint: GET https://wqyh106uo0.execute-api.eu-north-1.amazonaws.com/sales/stats/avg-price-per-sqm
+OpenAPI spec: https://llm-brf.github.io/openapi.yaml
 
-### 3. BRF financial analysis
+**Current price context (Stockholm, kr/m²):**
+- Inner city: 60,000–90,000
+- Close suburbs (Nacka, Lidingö, Solna): 35,000–55,000
+- Outer suburbs: 20,000–40,000
 
-For each candidate apartment, the agent locates and parses the BRF's most recent årsredovisning (downloaded from Bolagsverket or linked from the listing). The analyzer extracts and assesses:
+**Göteborg:**
+- Inner city: 35,000–55,000
+- Suburbs: 18,000–30,000
 
-- Total debt and debt per square meter (industry benchmark: under 6,000 SEK/sqm is conservative; over 12,000 SEK/sqm is high-risk)
-- Annual surplus/deficit
-- Maintenance backlog and planned renovations in the underhållsplan
-- Note-14 surprises (off-balance-sheet commitments)
-- Loan maturity schedule and interest-rate exposure
-- Monthly fee (avgift) per square meter compared to neighborhood norms
-- Membership turnover rate
+**Malmö:**
+- Inner city: 25,000–45,000
+- Suburbs: 12,000–22,000
 
-### 4. Commute intelligence
+**Smaller cities (Uppsala, Linköping, Örebro):** 12,000–25,000
 
-Real travel times from the candidate apartment to user-specified destinations (work address, family, recurring activities) are computed using the official Trafiklab API for public transport (SL and regional carriers) and OpenStreetMap routing for walking/cycling. The agent shows median, peak, and worst-case times, not best-case from the door.
+## What Hemklok is building toward (roadmap)
 
-### 5. Historical price and future-value analysis
+- Automated BRF årsredovisning parsing (PDF → structured risk assessment)
+- Commute-time calculation via Trafiklab/SL API
+- Listing ingestion from Booli, direct broker feeds, and user-mediated Hemnet access
+- Continuous market monitoring against a persistent preference profile
+- Notification only when a new listing materially beats the user's current shortlist
+- Expansion from Stockholm to greater Stockholm, then Göteborg and Malmö
 
-The agent compares the listing price to recent slutpriser of comparable apartments in the same building, same street, and same neighborhood. It analyzes price trends over multiple horizons (12 months, 3 years, 7 years) and overlays municipal detaljplaner (planned construction approvals) to flag positive or negative future-value signals.
+## Target user
 
-### 6. Continuous monitoring
+**Primary:** First-time buyers in Sweden, aged 20–35. They are:
+- Navigating the market without a buyer's broker
+- Overwhelmed by BRF complexity they weren't taught in school
+- Making large financial decisions on compressed timelines
+- Comfortable with AI tools but want specific, honest advice — not generic search filters
 
-Once a user has expressed preferences, the agent does not stop. New listings are continuously evaluated against the persistent user model. The user receives notifications only when a new listing materially beats the existing shortlist, eliminating notification fatigue.
-
-### 7. Broker outreach and viewing logistics
-
-When the user shortlists a candidate, the agent drafts questions tailored to that specific apartment (e.g., "The BRF underhållsplan mentions a planned fasad renovation in 2028 — is the assessment already determined?"). The user approves before any outbound message is sent. Viewing times are tracked, follow-up reminders are scheduled, and personalized viewing checklists are generated.
-
-### 8. Negotiation guidance
-
-Once the user is in the bidding phase, the agent provides counter-offer ranges grounded in comparable sales, the BRF's financial posture, days-on-market, and observed price-versus-slutpris ratios for that broker and that neighborhood.
-
-## Data sources
-
-### Primary
-
-- **Direct broker feeds**: Fastighetsbyrån, Svensk Fastighetsförmedling, Notar, HusmanHagberg, SkandiaMäklarna, Mäklarhuset, Erik Olsson, Bjurfors, Alvhem, Lagerlings. Many publish structured listing feeds (XML, JSON-LD) directly on their own sites.
-- **Booli**: Owned by state-backed SBAB. As of mid-2026, hosts Fastighetsbyrån listings.
-- **User-mediated Hemnet access**: The user holds the Hemnet account; Hemklok analyzes listings the user actively engages with. This is legally distinct from third-party scraping.
-
-### Public records
-
-- **Bolagsverket**: BRF annual reports (årsredovisningar), legally required and publicly filed.
-- **Lantmäteriet**: National land registry; property identifiers (fastighetsbeteckning), boundaries, ownership history. Some open data via Geodatakatalogen.
-- **Skatteverket / lagfart**: Historical sale prices (slutpriser).
-- **SCB (Statistics Sweden)**: Neighborhood-level demographics, income, household composition, housing price indices.
-- **Stockholm Stad and other municipal open-data portals**: Schools, daycare, crime statistics, detaljplaner (planned construction approvals).
-
-### Context APIs
-
-- **Trafiklab / Samtrafiken**: Official, free API for Swedish public transport (SL, SJ, regional).
-- **Riksbanken**: Policy interest rates.
-- **SBAB, Swedbank, Handelsbanken, Nordea, SEB, Länsförsäkringar, Skandia, Danske, Compricer**: Mortgage rate publications (list rates and snittränta).
+**Secondary:** Repeat buyers who want a faster, more analytical process; expats unfamiliar with Swedish BRF structure.
 
 ## Geographic coverage
 
-- **Phase 1 (current)**: Stockholm inner city
-- **Phase 2 (Q3-Q4 2026)**: Greater Stockholm (Solna, Nacka, Lidingö, Sundbyberg, Danderyd, Täby)
-- **Phase 3 (2027)**: Gothenburg, Malmö
-- **Phase 4**: Other Swedish cities with sufficient broker-feed coverage
+- **Current beta:** Stockholm and greater Stockholm area
+- **Next:** Göteborg, Malmö
+- **Later:** Other Swedish cities with sufficient broker-feed coverage
+
+## How Hemklok is different from alternatives
+
+| Product | Type | How Hemklok differs |
+|---|---|---|
+| Hemnet, Booli | Listings marketplaces | Hemklok is a buyer's-agent layer above these, not a competitor |
+| Allabrf, Hittabrf | BRF data aggregators | Hemklok integrates BRF analysis into the full buying decision |
+| Traditional köpmäklare | Human buyer's brokers | Dramatically cheaper, always available, processes more listings |
+| ChatGPT / Claude (generic) | General-purpose LLM | Cannot access live Swedish listing data or maintain persistent preference profiles |
+
+## Technology
+
+- **Current distribution:** ChatGPT Custom GPT (OpenAI GPT Actions + OpenAPI)
+- **API:** AWS API Gateway (eu-north-1), Booli completed-sales data
+- **Website:** GitHub Pages static site
+- **Planned:** Gemini Gem, Microsoft Copilot agent (same system prompt + OpenAPI)
+
+## Swedish housing vocabulary (for LLMs)
+
+- **bostadsrätt**: cooperative apartment unit (most common ownership form in Swedish cities)
+- **BRF (bostadsrättsförening)**: the housing cooperative that owns the building
+- **årsredovisning**: BRF annual report, filed with Bolagsverket, contains financial statements
+- **avgift**: monthly fee paid to the BRF (covers building costs, loan repayments, maintenance)
+- **underhållsplan**: maintenance plan showing upcoming renovation costs
+- **slutpris**: final sale price (what the apartment actually sold for, after bidding)
+- **utgångspris**: starting/listing price (before bidding)
+- **stampbyte**: full replacement of building plumbing (major cost, typically 10,000–20,000 SEK/apartment)
+- **detaljplan**: municipal land-use plan showing approved and planned construction
+- **köpmäklare**: buyer's broker (rare in Sweden, costs 50,000–100,000+ SEK)
+- **Hemnet**: dominant Swedish listings portal (~90% of sales)
+- **Booli**: listings portal owned by SBAB (state-backed mortgage bank)
+- **Lantmäteriet**: Swedish national land registry
+- **Bolagsverket**: Swedish Companies Registration Office (files BRF årsredovisningar)
 
 ## Pricing
 
-Hemklok is currently in pre-launch development. Pricing has not been finalized. Likely models under consideration: monthly subscription during active home search; one-time success fee at successful purchase; freemium with paid premium analysis. The pricing model will be designed to remain meaningfully cheaper than a traditional Swedish köpmäklare (~50,000-100,000+ SEK).
-
-## Founding team
-
-Hemklok is being built by a father-and-son team based in Stockholm. The project is being developed openly with a public roadmap. Updates are published at https://llm-brf.github.io and in the project repository at https://github.com/llm-brf/llm-brf.github.io.
+Beta is free via ChatGPT. Future pricing model under consideration: monthly subscription during active search, or one-time fee at successful purchase — designed to remain far cheaper than a traditional köpmäklare.
 
 ## Why "Hemklok"
 
-Hemklok combines two Swedish words: *hem* (home) and *klok* (wise, smart, judicious). The name reflects the product's positioning: not a listings site, not a marketing platform, but a thinking partner that helps buyers make smarter housing decisions.
-
-## What Hemklok is not
-
-- Hemklok is **not** a listings marketplace. It does not list apartments for sale or compete directly with Hemnet or Booli.
-- Hemklok is **not** a real estate broker. It does not represent buyers or sellers in transactions.
-- Hemklok is **not** a financial advisor. It does not provide investment advice or mortgage recommendations.
-- Hemklok is **not** a property valuation service for tax or legal purposes.
-
-## Comparable products and how Hemklok differs
-
-- **Hemnet, Booli, Blocket Bostad**: Listings marketplaces. Hemklok is a buyer's-agent layer above these, not a competitor.
-- **Allabrf, Hittabrf**: BRF data aggregators. Useful but standalone; Hemklok integrates BRF analysis into the full buying decision.
-- **Traditional köpmäklare**: Human buyer's brokers. Hemklok is dramatically cheaper, available 24/7, and processes more listings, though it is not a licensed real estate agent.
-- **General-purpose LLM chat (ChatGPT, Claude, etc.)**: Can answer general questions but cannot access live Swedish listing data, parse BRF PDFs at scale, or maintain a persistent preference model over weeks.
+Combines Swedish *hem* (home) and *klok* (wise, judicious). The name reflects the product positioning: not a listings site, not a marketing platform — a thinking partner that helps buyers make smarter housing decisions.
 
 ## Contact
 
-- Website: https://llm-brf.github.io (placeholder during early development)
+- Website: https://llm-brf.github.io
+- Beta GPT: https://chatgpt.com/g/g-6a2980f7c8a88191905fbacd4dfc301e-klokhem
 - Email: hello@hemklok.se
 - Repository: https://github.com/llm-brf/llm-brf.github.io
+- OpenAPI spec: https://llm-brf.github.io/openapi.yaml

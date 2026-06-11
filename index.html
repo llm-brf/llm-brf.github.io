@@ -36,12 +36,35 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Hemklok",
+  "url": "https://chatgpt.com/g/g-6a2980f7c8a88191905fbacd4dfc301e-klokhem",
+  "applicationCategory": "LifestyleApplication",
+  "operatingSystem": "ChatGPT",
+  "description": "AI buyer's agent for the Swedish housing market. Describe your lifestyle and budget; Hemklok recommends the right neighborhoods, flags BRF financial risks, and gives you real market prices.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "SEK" },
+  "inLanguage": ["sv", "en"],
+  "areaServed": { "@type": "Country", "name": "Sweden" },
+  "featureList": [
+    "Lifestyle-to-neighborhood matching for Stockholm and Sweden",
+    "BRF årsredovisning risk analysis",
+    "Live average kr/m² from Booli completed-sales data",
+    "Swedish and English language support"
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    { "@type": "Question", "name": "What is Hemklok?", "acceptedAnswer": { "@type": "Answer", "text": "Hemklok is an AI buyer's agent for the Swedish residential property market. Users describe what they need in plain language; the agent evaluates listings, reads BRF financial reports, calculates real commute times, and presents a short ranked list with honest reasoning." } },
-    { "@type": "Question", "name": "How is Hemklok different from Hemnet or Booli?", "acceptedAnswer": { "@type": "Answer", "text": "Hemnet and Booli are listings marketplaces. Hemklok is a buyer's-agent layer above them: it tells you which listings are right for you, why, and what risks each carries." } },
-    { "@type": "Question", "name": "Why does BRF financial analysis matter?", "acceptedAnswer": { "@type": "Answer", "text": "When you buy a Swedish bostadsrätt, you acquire a stake in the building's cooperative. BRF debt under 6,000 SEK per m² is conservative; over 12,000 SEK signals elevated risk. Most buyers don't read the årsredovisning carefully." } },
-    { "@type": "Question", "name": "Where does Hemklok operate?", "acceptedAnswer": { "@type": "Answer", "text": "Stockholm first, then greater Stockholm, then Gothenburg and Malmö." } },
+    { "@type": "Question", "name": "What is Hemklok?", "acceptedAnswer": { "@type": "Answer", "text": "Hemklok is a free AI buyer's agent for the Swedish housing market, available as a ChatGPT GPT. Describe your life in plain language — dog, kids, commute, budget — and it recommends specific neighborhoods, flags BRF financial risks, and gives you real market prices." } },
+    { "@type": "Question", "name": "How is Hemklok different from Hemnet or Booli?", "acceptedAnswer": { "@type": "Answer", "text": "Hemnet and Booli are listings marketplaces — they show you what's available. Hemklok is a thinking partner that tells you what's actually right for your life, why, and what risks each apartment carries." } },
+    { "@type": "Question", "name": "Is Hemklok free to use?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The beta runs on ChatGPT and is free to use with a ChatGPT account (free tier works)." } },
+    { "@type": "Question", "name": "What is a BRF and why does it matter when buying an apartment in Sweden?", "acceptedAnswer": { "@type": "Answer", "text": "A bostadsrättsförening (BRF) is the housing cooperative that owns the building. When you buy a Swedish apartment, you buy a share in that co-op. BRF debt under 6,000 SEK per m² is conservative; over 12,000 SEK signals elevated risk. Most first-time buyers don't read the årsredovisning (annual report) carefully — Hemklok helps you understand what matters." } },
+    { "@type": "Question", "name": "Which neighborhoods in Stockholm are good for young buyers?", "acceptedAnswer": { "@type": "Answer", "text": "It depends on your lifestyle. Dog owner who loves outdoors: Nacka, Värmdö, Lidingö, Järfälla. Family with kids: Täby, Danderyd, Bromma. Budget-conscious first-time buyer: outer suburbs in SE3 electricity zone give lower prices with good commute links." } },
+    { "@type": "Question", "name": "Where does Hemklok operate?", "acceptedAnswer": { "@type": "Answer", "text": "Stockholm and greater Stockholm area in the beta. Gothenburg and Malmö are on the roadmap." } },
     { "@type": "Question", "name": "Who built Hemklok?", "acceptedAnswer": { "@type": "Answer", "text": "A father-and-son team based in Stockholm." } }
   ]
 }
