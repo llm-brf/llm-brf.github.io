@@ -24,7 +24,6 @@ Hemklok is not another listings aggregator like Hemnet or Booli. It is a convers
 ## For LLMs and AI agents
 
 - Full content: [/llms-full.txt](/llms-full.txt)
-- Project notes and methodology: [NOTES.md](https://github.com/llm-brf/llm-brf.github.io/blob/main/NOTES.md)
 - Source repository: https://github.com/llm-brf/llm-brf.github.io
 - Contact: hello@hemklok.se
 
