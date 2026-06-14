@@ -35,15 +35,15 @@ paths:
       operationId: getSalesStatsAvgPricePerSqm
       description: >
         Returns the average final sale price per square metre (kr/m²) across
-        completed deals in the database. Both query parameters are optional and
+        completed sales in the database. Both query parameters are optional and
         can be combined. The response always includes the date range and number
-        of deals that contributed to the average so the caller can judge
+        of sales that contributed to the average so the caller can judge
         statistical significance.
       parameters:
         - name: year
           in: query
           required: false
-          description: Restrict to deals sold in this calendar year.
+          description: Restrict to sales in this calendar year.
           schema:
             type: integer
             minimum: 1900
@@ -53,7 +53,7 @@ paths:
           in: query
           required: false
           description: >
-            Restrict to deals where the number of rooms matches exactly.
+            Restrict to sales where the number of rooms matches exactly.
             Accepts integers and half-values (e.g. 3 or 3.5).
           schema:
             type: number
@@ -69,7 +69,7 @@ paths:
                 $ref: "#/components/schemas/AvgPricePerSqm"
               examples:
                 all_data:
-                  summary: No filters — all 375 deals
+                  summary: No filters — all 375 sales
                   value:
                     avg_kr_per_m2: 29112
                     sample_count: 375
@@ -122,13 +122,198 @@ paths:
                   value:
                     error: rooms must be a number
         "404":
-          description: No deals match the given filters
+          description: No sales match the given filters
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
               example:
                 error: no data found for the given filters
+
+  /sales:
+    get:
+      summary: List completed sales
+      operationId: listSales
+      description: >
+        Returns completed sales, most recent first. Each row is fully
+        self-contained (denormalized "One Big Table" model): besides the sale's
+        own fields it embeds the housing cooperative (brf_*) and the five
+        geographically nearest schools (school_1..5_*, with per-year
+        socio-economic index and distance in metres). No joins or follow-up
+        requests are needed to get the surrounding context.
+      parameters:
+        - name: year
+          in: query
+          required: false
+          description: Restrict to sales in this calendar year.
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2100
+          example: 2025
+        - name: rooms
+          in: query
+          required: false
+          description: Restrict to sales with exactly this number of rooms (e.g. 3 or 3.5).
+          schema:
+            type: number
+            minimum: 0.5
+            maximum: 20
+          example: 3
+        - name: limit
+          in: query
+          required: false
+          description: >
+            Maximum number of rows to return (1–10). The result set is capped at
+            10 by design: apply a filter and the default most-recent-first order
+            to narrow the set before reading it, keeping query and payload cost low.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 10
+      responses:
+        "200":
+          description: Sales returned (possibly empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesList"
+        "400":
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /advertisements:
+    get:
+      summary: List property advertisements
+      operationId: listAdvertisements
+      description: >
+        Returns property listings to support a purchase decision. Like sales,
+        each row is fully self-contained (denormalized "One Big Table" model):
+        besides the listing's own fields it embeds the housing cooperative
+        (brf_*) and the five geographically nearest schools (school_1..5_*), plus
+        a derived `avg_school_socio_index` summarising school quality nearby.
+
+
+        The result set is **capped at 10 rows**. Rather than paging the whole
+        market, choose a `sort` that matches what you're optimising for (lowest
+        price per m², largest BRF, best nearby schools, …) and narrow with the
+        filters below; you then get the 10 best matches in one cheap request.
+        Default order is most recently listed first.
+      parameters:
+        - name: year
+          in: query
+          required: false
+          description: Restrict to listings posted in this calendar year.
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2100
+          example: 2025
+        - name: rooms
+          in: query
+          required: false
+          description: Restrict to listings with exactly this number of rooms (e.g. 3 or 3.5).
+          schema:
+            type: number
+            minimum: 0.5
+            maximum: 20
+          example: 3
+        - name: sort
+          in: query
+          required: false
+          description: >
+            Ordering of the (capped) result set. `price_*` sorts on asking price,
+            `price_per_sqm_*` on kr/m² (best value first with `_asc`),
+            `brf_units_*` on the number of apartments in the cooperative, and
+            `school_index_*` on `avg_school_socio_index` (the average latest-year
+            socio-economic index of the nearest schools; `_desc` = best first).
+            Listings missing the sorted value sort last.
+          schema:
+            type: string
+            default: listed_date
+            enum:
+              - listed_date
+              - price_asc
+              - price_desc
+              - price_per_sqm_asc
+              - price_per_sqm_desc
+              - brf_units_asc
+              - brf_units_desc
+              - school_index_asc
+              - school_index_desc
+          example: price_per_sqm_asc
+        - name: min_price
+          in: query
+          required: false
+          description: Only listings with an asking price of at least this many kronor.
+          schema:
+            type: integer
+            minimum: 0
+          example: 2000000
+        - name: max_price
+          in: query
+          required: false
+          description: Only listings with an asking price of at most this many kronor.
+          schema:
+            type: integer
+            minimum: 0
+          example: 5000000
+        - name: min_brf_units
+          in: query
+          required: false
+          description: >
+            Only listings whose cooperative has at least this many apartments
+            (brf_num_units). Larger föreningar tend to spread shared costs wider.
+          schema:
+            type: integer
+            minimum: 0
+          example: 50
+        - name: min_school_index
+          in: query
+          required: false
+          description: >
+            Only listings whose `avg_school_socio_index` (average latest-year
+            socio-economic index across the nearest schools) is at least this value.
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1000
+          example: 90
+        - name: limit
+          in: query
+          required: false
+          description: >
+            Maximum number of rows to return (1–10). Capped at 10 by design — see
+            the endpoint description; pick a `sort` and filters instead of paging.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 10
+      responses:
+        "200":
+          description: Advertisements returned (possibly empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvertisementsList"
+        "400":
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                bad_sort:
+                  value:
+                    error: "sort must be one of: brf_units_asc, brf_units_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, school_index_asc, school_index_desc"
+                bad_limit:
+                  value:
+                    error: limit out of range (1-10)
 
 components:
   schemas:
@@ -147,17 +332,17 @@ components:
           example: 25558
         sample_count:
           type: integer
-          description: Number of deals that contributed to the average.
+          description: Number of sales that contributed to the average.
           example: 25
         from_date:
           type: string
           format: date
-          description: Earliest sale date among the matched deals.
+          description: Earliest sale date among the matched sales.
           example: "2025-01-07"
         to_date:
           type: string
           format: date
-          description: Latest sale date among the matched deals.
+          description: Latest sale date among the matched sales.
           example: "2025-12-22"
         filters:
           type: object
@@ -171,6 +356,269 @@ components:
               type: number
               nullable: true
               example: 3.0
+
+    SalesList:
+      type: object
+      required:
+        - sales
+        - count
+        - filters
+      properties:
+        sales:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sale"
+        count:
+          type: integer
+          description: Number of rows returned (at most 10).
+          example: 10
+        filters:
+          type: object
+          properties:
+            year:
+              type: integer
+              nullable: true
+            rooms:
+              type: number
+              nullable: true
+            limit:
+              type: integer
+              example: 10
+
+    Sale:
+      type: object
+      description: >
+        A completed sale, fully denormalized — one flat row, no nested objects
+        except `location`. Fields fall into three groups:
+
+        • Sale core — sold_date, property_type, street_name, street_number,
+        apartment_number, rooms, living_area_m2, additional_area_m2, floor,
+        construction_year, final_price_kr, asking_price_kr, first_price_kr,
+        kr_per_m2, monthly_fee_kr, price_change_pct, broker_agency, source_url,
+        attributes (JSONB), kommun, location {lat, lng}.
+
+        • BRF block (NULL for non-coop sales) — brf_booli_id, brf_name,
+        brf_org_number, brf_construction_year, brf_num_units, brf_num_rental_units,
+        brf_total_living_area_m2, brf_plot_ownership, brf_is_genuine,
+        brf_total_loan_kr, brf_annual_report_year, brf_has_valid_annual_report,
+        brf_economy (JSONB).
+
+        • Nearest-5 schools — school_1_* (closest) … school_5_*, each with:
+        _skolenhetskod, _name, _type, _distance_m, _socio_index_2023 /
+        _2024 / _2025 / _2026, _ineligible_pct_latest, _ineligible_pct_prev.
+
+        The properties below are a representative sample; the authoritative full
+        column list is src/db/schema.sql. additionalProperties is true so new
+        flat columns appear without a spec change.
+      additionalProperties: true
+      properties:
+        sold_date:
+          type: string
+          format: date
+          example: "2025-12-22"
+        property_type:
+          type: string
+          example: bostadsrätt
+        street_name:
+          type: string
+          example: Gusthemsvägen
+        rooms:
+          type: number
+          example: 3.0
+        living_area_m2:
+          type: number
+          example: 72.0
+        final_price_kr:
+          type: integer
+          example: 3950000
+        kr_per_m2:
+          type: integer
+          example: 54861
+        kommun:
+          type: string
+          example: Tyresö
+        location:
+          type: object
+          nullable: true
+          properties:
+            lat:
+              type: number
+              example: 59.237
+            lng:
+              type: number
+              example: 18.301
+        brf_name:
+          type: string
+          nullable: true
+          example: Brf Sjötungan
+        brf_num_units:
+          type: integer
+          nullable: true
+          description: Total number of apartments in the cooperative.
+          example: 120
+        brf_total_loan_kr:
+          type: integer
+          nullable: true
+          example: 48000000
+        school_1_name:
+          type: string
+          nullable: true
+          example: Kumla skola
+        school_1_distance_m:
+          type: integer
+          nullable: true
+          description: Metres from the property to the nearest school.
+          example: 420
+        school_1_socio_index_2026:
+          type: number
+          nullable: true
+          description: Latest-year socio-economic index of the nearest school.
+          example: 92.0
+
+    AdvertisementsList:
+      type: object
+      required:
+        - advertisements
+        - count
+        - filters
+      properties:
+        advertisements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Advertisement"
+        count:
+          type: integer
+          description: Number of rows returned (at most 10).
+          example: 10
+        filters:
+          type: object
+          description: Echo of the filters and sort that were applied.
+          properties:
+            year:
+              type: integer
+              nullable: true
+            rooms:
+              type: number
+              nullable: true
+            sort:
+              type: string
+              example: price_per_sqm_asc
+            min_price:
+              type: integer
+              nullable: true
+            max_price:
+              type: integer
+              nullable: true
+            min_brf_units:
+              type: integer
+              nullable: true
+            min_school_index:
+              type: number
+              nullable: true
+            limit:
+              type: integer
+              example: 10
+
+    Advertisement:
+      type: object
+      description: >
+        A property listing, fully denormalized — one flat row, no nested objects
+        except `location`. Fields fall into three groups:
+
+        • Listing core — listing_id, listed_date, asking_price_kr, property_type,
+        street_name, street_number, apartment_number, rooms, living_area_m2,
+        kr_per_m2, broker_agency, description, attributes (JSONB), source_url,
+        kommun, location {lat, lng}.
+
+        • BRF block (currently NULL — the ads export carries no BRF link yet) —
+        brf_booli_id, brf_name, brf_org_number, brf_construction_year,
+        brf_num_units, brf_num_rental_units, brf_total_living_area_m2,
+        brf_plot_ownership, brf_is_genuine, brf_total_loan_kr,
+        brf_annual_report_year, brf_has_valid_annual_report, brf_economy (JSONB).
+
+        • Nearest-5 schools — school_1_* (closest) … school_5_*, each with:
+        _skolenhetskod, _name, _type, _distance_m, _socio_index_2023 /
+        _2024 / _2025 / _2026, _ineligible_pct_latest, _ineligible_pct_prev.
+        The single derived `avg_school_socio_index` (added by this endpoint)
+        averages the latest-year index across those schools.
+
+        The properties below are a representative sample; the authoritative full
+        column list is src/db/schema.sql. additionalProperties is true so new
+        flat columns appear without a spec change.
+      additionalProperties: true
+      properties:
+        listing_id:
+          type: string
+          example: "4123456"
+        listed_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2026-05-30"
+        asking_price_kr:
+          type: integer
+          nullable: true
+          example: 3895000
+        property_type:
+          type: string
+          example: bostadsrätt
+        street_name:
+          type: string
+          example: Gusthemsvägen
+        rooms:
+          type: number
+          example: 3.0
+        living_area_m2:
+          type: number
+          example: 72.0
+        kr_per_m2:
+          type: integer
+          nullable: true
+          example: 54097
+        kommun:
+          type: string
+          example: Tyresö
+        location:
+          type: object
+          nullable: true
+          properties:
+            lat:
+              type: number
+              example: 59.237
+            lng:
+              type: number
+              example: 18.301
+        brf_name:
+          type: string
+          nullable: true
+          example: Brf Sjötungan
+        brf_num_units:
+          type: integer
+          nullable: true
+          description: Total number of apartments in the cooperative.
+          example: 120
+        school_1_name:
+          type: string
+          nullable: true
+          example: Kumla skola
+        school_1_distance_m:
+          type: integer
+          nullable: true
+          description: Metres from the property to the nearest school.
+          example: 420
+        school_1_socio_index_2026:
+          type: number
+          nullable: true
+          description: Latest-year socio-economic index of the nearest school.
+          example: 92.0
+        avg_school_socio_index:
+          type: number
+          nullable: true
+          description: >
+            Average latest-year socio-economic index across the (up to five)
+            nearest schools, ignoring those whose index is suppressed. The value
+            the `school_index_*` sort and `min_school_index` filter operate on.
+          example: 88.4
 
     Error:
       type: object
