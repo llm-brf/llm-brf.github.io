@@ -130,62 +130,6 @@ paths:
               example:
                 error: no data found for the given filters
 
-  /sales:
-    get:
-      summary: List completed sales
-      operationId: listSales
-      description: >
-        Returns completed sales, most recent first. Each row is fully
-        self-contained (denormalized "One Big Table" model): besides the sale's
-        own fields it embeds the housing cooperative (brf_*) and the five
-        geographically nearest schools (school_1..5_*, with per-year
-        socio-economic index and distance in metres). No joins or follow-up
-        requests are needed to get the surrounding context.
-      parameters:
-        - name: year
-          in: query
-          required: false
-          description: Restrict to sales in this calendar year.
-          schema:
-            type: integer
-            minimum: 1900
-            maximum: 2100
-          example: 2025
-        - name: rooms
-          in: query
-          required: false
-          description: Restrict to sales with exactly this number of rooms (e.g. 3 or 3.5).
-          schema:
-            type: number
-            minimum: 0.5
-            maximum: 20
-          example: 3
-        - name: limit
-          in: query
-          required: false
-          description: >
-            Maximum number of rows to return (1–10). The result set is capped at
-            10 by design: apply a filter and the default most-recent-first order
-            to narrow the set before reading it, keeping query and payload cost low.
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 10
-            default: 10
-      responses:
-        "200":
-          description: Sales returned (possibly empty)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SalesList"
-        "400":
-          description: Invalid query parameter
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
   /advertisements:
     get:
       summary: List property advertisements
@@ -204,19 +148,18 @@ paths:
         filters below; you then get the 10 best matches in one cheap request.
         Default order is most recently listed first.
       parameters:
-        - name: year
+        - name: property_type
           in: query
           required: false
-          description: Restrict to listings posted in this calendar year.
+          description: Restrict to one dwelling type.
           schema:
-            type: integer
-            minimum: 1900
-            maximum: 2100
-          example: 2025
-        - name: rooms
+            type: string
+            enum: [bostadsrätt, villa, radhus, fritidshus]
+          example: bostadsrätt
+        - name: min_rooms
           in: query
           required: false
-          description: Restrict to listings with exactly this number of rooms (e.g. 3 or 3.5).
+          description: Only listings with at least this many rooms (e.g. 3 or 3.5).
           schema:
             type: number
             minimum: 0.5
@@ -228,10 +171,21 @@ paths:
           description: >
             Ordering of the (capped) result set. `price_*` sorts on asking price,
             `price_per_sqm_*` on kr/m² (best value first with `_asc`),
-            `brf_units_*` on the number of apartments in the cooperative, and
-            `school_index_*` on `avg_school_socio_index` (the average latest-year
-            socio-economic index of the nearest schools; `_desc` = best first).
-            Listings missing the sorted value sort last.
+            `rooms_*` on room count, `area_*` on living area,
+            `fee_per_sqm_*` on the monthly avgift per m² (`_asc` = cheapest to own
+            first), `brf_price_*` on the BRF's current-year (latest) average kr/m²,
+            `construction_year_*` on the building's construction year
+            (`_desc` = newest first), `brf_units_*` on the number of apartments in
+            the cooperative, `brf_loan_*` on `brf_loan_per_m2` (the BRF's loan per
+            m²; `_asc` = least-indebted first), `brf_trend_*` on
+            `brf_kr_per_m2_trend` (the BRF's price/m² trend in kr per year; `_desc`
+            = fastest appreciating first). The school sorts come in three radii —
+            `school_index_1_*` (closest school), `school_index_3_*` (3 nearest) and
+            `school_index_*` (5 nearest) — on the current latest-year
+            socio-economic index (`_desc` = best first), with matching
+            `school_forecast_1_*` / `school_forecast_3_*` / `school_forecast_*`
+            on the same averages projected three years ahead from the recent-years
+            trend. Listings missing the sorted value sort last.
           schema:
             type: string
             default: listed_date
@@ -241,10 +195,34 @@ paths:
               - price_desc
               - price_per_sqm_asc
               - price_per_sqm_desc
+              - rooms_asc
+              - rooms_desc
+              - area_asc
+              - area_desc
+              - fee_per_sqm_asc
+              - fee_per_sqm_desc
+              - construction_year_asc
+              - construction_year_desc
               - brf_units_asc
               - brf_units_desc
+              - brf_loan_asc
+              - brf_loan_desc
+              - brf_price_asc
+              - brf_price_desc
+              - brf_trend_asc
+              - brf_trend_desc
+              - school_index_1_asc
+              - school_index_1_desc
+              - school_index_3_asc
+              - school_index_3_desc
               - school_index_asc
               - school_index_desc
+              - school_forecast_1_asc
+              - school_forecast_1_desc
+              - school_forecast_3_asc
+              - school_forecast_3_desc
+              - school_forecast_asc
+              - school_forecast_desc
           example: price_per_sqm_asc
         - name: min_price
           in: query
@@ -262,6 +240,61 @@ paths:
             type: integer
             minimum: 0
           example: 5000000
+        - name: max_kr_per_m2
+          in: query
+          required: false
+          description: Only listings with a price per m² of at most this many kronor.
+          schema:
+            type: integer
+            minimum: 0
+          example: 60000
+        - name: min_area_m2
+          in: query
+          required: false
+          description: Only listings with at least this living area (m²).
+          schema:
+            type: number
+            minimum: 0
+          example: 60
+        - name: max_area_m2
+          in: query
+          required: false
+          description: Only listings with at most this living area (m²).
+          schema:
+            type: number
+            minimum: 0
+          example: 120
+        - name: min_construction_year
+          in: query
+          required: false
+          description: Only listings whose building was constructed in or after this year.
+          schema:
+            type: integer
+            minimum: 1500
+            maximum: 2100
+          example: 1970
+        - name: max_construction_year
+          in: query
+          required: false
+          description: >
+            Only listings whose building was constructed in or before this year
+            (building age = current year − construction_year).
+          schema:
+            type: integer
+            minimum: 1500
+            maximum: 2100
+          example: 2020
+        - name: max_fee_per_sqm
+          in: query
+          required: false
+          description: >
+            Only listings whose monthly avgift per m² (`monthly_fee_per_m2`,
+            kr/m²/month) is at most this value — caps ongoing carrying cost.
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1000
+          example: 80
         - name: min_brf_units
           in: query
           required: false
@@ -272,17 +305,91 @@ paths:
             type: integer
             minimum: 0
           example: 50
+        - name: max_brf_loan_per_m2
+          in: query
+          required: false
+          description: >
+            Only listings whose BRF loan per m² (`brf_loan_per_m2`, kr/m²) is at
+            most this value — a lower cap targets less-indebted föreningar.
+          schema:
+            type: integer
+            minimum: 0
+          example: 6000
+        - name: min_brf_trend
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_kr_per_m2_trend` (the BRF's price/m² trend in
+            kr per year, from its own sold listings) is at least this value. May be
+            negative; use 0 to surface only föreningar with non-declining prices.
+          schema:
+            type: integer
+          example: 0
         - name: min_school_index
           in: query
           required: false
           description: >
             Only listings whose `avg_school_socio_index` (average latest-year
-            socio-economic index across the nearest schools) is at least this value.
+            socio-economic index across the 5 nearest schools) is at least this value.
           schema:
             type: number
             minimum: 0
             maximum: 1000
           example: 90
+        - name: min_school_index_3
+          in: query
+          required: false
+          description: >
+            Only listings whose `avg_school_socio_index_3` (average latest-year
+            socio-economic index across the 3 nearest schools — a tighter radius)
+            is at least this value.
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1000
+          example: 90
+        - name: min_school_index_1
+          in: query
+          required: false
+          description: >
+            Only listings whose `avg_school_socio_index_1` (the closest school's
+            latest-year socio-economic index) is at least this value.
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1000
+          example: 90
+        - name: near_lat
+          in: query
+          required: false
+          description: >
+            Radius search — centre latitude (WGS84). Must be given together with
+            `near_lng` and `radius_m`; returns only listings within that radius.
+          schema:
+            type: number
+            minimum: -90
+            maximum: 90
+          example: 59.2435
+        - name: near_lng
+          in: query
+          required: false
+          description: Radius search — centre longitude (WGS84). See `near_lat`.
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+          example: 18.3012
+        - name: radius_m
+          in: query
+          required: false
+          description: >
+            Radius search — radius in metres around (`near_lat`, `near_lng`). All
+            three radius parameters must be supplied together (else HTTP 400).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100000
+          example: 1500
         - name: limit
           in: query
           required: false
@@ -310,7 +417,7 @@ paths:
               examples:
                 bad_sort:
                   value:
-                    error: "sort must be one of: brf_units_asc, brf_units_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, school_index_asc, school_index_desc"
+                    error: "sort must be one of: area_asc, area_desc, brf_loan_asc, brf_loan_desc, brf_price_asc, brf_price_desc, brf_trend_asc, brf_trend_desc, brf_units_asc, brf_units_desc, construction_year_asc, construction_year_desc, fee_per_sqm_asc, fee_per_sqm_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, rooms_asc, rooms_desc, school_forecast_1_asc, school_forecast_1_desc, school_forecast_3_asc, school_forecast_3_desc, school_forecast_asc, school_forecast_desc, school_index_1_asc, school_index_1_desc, school_index_3_asc, school_index_3_desc, school_index_asc, school_index_desc"
                 bad_limit:
                   value:
                     error: limit out of range (1-10)
@@ -357,124 +464,6 @@ components:
               nullable: true
               example: 3.0
 
-    SalesList:
-      type: object
-      required:
-        - sales
-        - count
-        - filters
-      properties:
-        sales:
-          type: array
-          items:
-            $ref: "#/components/schemas/Sale"
-        count:
-          type: integer
-          description: Number of rows returned (at most 10).
-          example: 10
-        filters:
-          type: object
-          properties:
-            year:
-              type: integer
-              nullable: true
-            rooms:
-              type: number
-              nullable: true
-            limit:
-              type: integer
-              example: 10
-
-    Sale:
-      type: object
-      description: >
-        A completed sale, fully denormalized — one flat row, no nested objects
-        except `location`. Fields fall into three groups:
-
-        • Sale core — sold_date, property_type, street_name, street_number,
-        apartment_number, rooms, living_area_m2, additional_area_m2, floor,
-        construction_year, final_price_kr, asking_price_kr, first_price_kr,
-        kr_per_m2, monthly_fee_kr, price_change_pct, broker_agency, source_url,
-        attributes (JSONB), kommun, location {lat, lng}.
-
-        • BRF block (NULL for non-coop sales) — brf_booli_id, brf_name,
-        brf_org_number, brf_construction_year, brf_num_units, brf_num_rental_units,
-        brf_total_living_area_m2, brf_plot_ownership, brf_is_genuine,
-        brf_total_loan_kr, brf_annual_report_year, brf_has_valid_annual_report,
-        brf_economy (JSONB).
-
-        • Nearest-5 schools — school_1_* (closest) … school_5_*, each with:
-        _skolenhetskod, _name, _type, _distance_m, _socio_index_2023 /
-        _2024 / _2025 / _2026, _ineligible_pct_latest, _ineligible_pct_prev.
-
-        The properties below are a representative sample; the authoritative full
-        column list is src/db/schema.sql. additionalProperties is true so new
-        flat columns appear without a spec change.
-      additionalProperties: true
-      properties:
-        sold_date:
-          type: string
-          format: date
-          example: "2025-12-22"
-        property_type:
-          type: string
-          example: bostadsrätt
-        street_name:
-          type: string
-          example: Gusthemsvägen
-        rooms:
-          type: number
-          example: 3.0
-        living_area_m2:
-          type: number
-          example: 72.0
-        final_price_kr:
-          type: integer
-          example: 3950000
-        kr_per_m2:
-          type: integer
-          example: 54861
-        kommun:
-          type: string
-          example: Tyresö
-        location:
-          type: object
-          nullable: true
-          properties:
-            lat:
-              type: number
-              example: 59.237
-            lng:
-              type: number
-              example: 18.301
-        brf_name:
-          type: string
-          nullable: true
-          example: Brf Sjötungan
-        brf_num_units:
-          type: integer
-          nullable: true
-          description: Total number of apartments in the cooperative.
-          example: 120
-        brf_total_loan_kr:
-          type: integer
-          nullable: true
-          example: 48000000
-        school_1_name:
-          type: string
-          nullable: true
-          example: Kumla skola
-        school_1_distance_m:
-          type: integer
-          nullable: true
-          description: Metres from the property to the nearest school.
-          example: 420
-        school_1_socio_index_2026:
-          type: number
-          nullable: true
-          description: Latest-year socio-economic index of the nearest school.
-          example: 92.0
-
     AdvertisementsList:
       type: object
       required:
@@ -494,10 +483,10 @@ components:
           type: object
           description: Echo of the filters and sort that were applied.
           properties:
-            year:
-              type: integer
+            property_type:
+              type: string
               nullable: true
-            rooms:
+            min_rooms:
               type: number
               nullable: true
             sort:
@@ -509,11 +498,50 @@ components:
             max_price:
               type: integer
               nullable: true
+            max_kr_per_m2:
+              type: integer
+              nullable: true
+            min_area_m2:
+              type: number
+              nullable: true
+            max_area_m2:
+              type: number
+              nullable: true
+            min_construction_year:
+              type: integer
+              nullable: true
+            max_construction_year:
+              type: integer
+              nullable: true
+            max_fee_per_sqm:
+              type: number
+              nullable: true
             min_brf_units:
+              type: integer
+              nullable: true
+            max_brf_loan_per_m2:
+              type: integer
+              nullable: true
+            min_brf_trend:
               type: integer
               nullable: true
             min_school_index:
               type: number
+              nullable: true
+            min_school_index_1:
+              type: number
+              nullable: true
+            min_school_index_3:
+              type: number
+              nullable: true
+            near_lat:
+              type: number
+              nullable: true
+            near_lng:
+              type: number
+              nullable: true
+            radius_m:
+              type: integer
               nullable: true
             limit:
               type: integer
@@ -527,10 +555,14 @@ components:
 
         • Listing core — listing_id, listed_date, asking_price_kr, property_type,
         street_name, street_number, apartment_number, rooms, living_area_m2,
-        kr_per_m2, broker_agency, description, attributes (JSONB), source_url,
-        kommun, location {lat, lng}.
+        kr_per_m2, monthly_fee_kr (the BRF avgift in kr/month; NULL for listings
+        with no fee), construction_year (the building's construction year),
+        broker_agency, description, attributes (JSONB), photo_urls (ordered array
+        of listing photo URLs, primary first), source_url, kommun,
+        location {lat, lng}.
 
-        • BRF block (currently NULL — the ads export carries no BRF link yet) —
+        • BRF block (recovered by matching the listing address to the BRF
+        residences export; NULL for non-coop listings or unmatched addresses) —
         brf_booli_id, brf_name, brf_org_number, brf_construction_year,
         brf_num_units, brf_num_rental_units, brf_total_living_area_m2,
         brf_plot_ownership, brf_is_genuine, brf_total_loan_kr,
@@ -539,8 +571,13 @@ components:
         • Nearest-5 schools — school_1_* (closest) … school_5_*, each with:
         _skolenhetskod, _name, _type, _distance_m, _socio_index_2023 /
         _2024 / _2025 / _2026, _ineligible_pct_latest, _ineligible_pct_prev.
-        The single derived `avg_school_socio_index` (added by this endpoint)
-        averages the latest-year index across those schools.
+        Cross-school rollups are precomputed as flat columns at import time and
+        ride along on every row, for three nearest-school radii (1 = closest, 3,
+        5): a current latest-year average (`avg_school_socio_index_1` /
+        `_3` / `avg_school_socio_index`) and a three-year-ahead projection of
+        each (`avg_school_socio_index_1_forecast` / `_3_forecast` /
+        `avg_school_socio_index_forecast`), fitted by least squares to each
+        school's per-year history.
 
         The properties below are a representative sample; the authoritative full
         column list is src/db/schema.sql. additionalProperties is true so new
@@ -575,6 +612,40 @@ components:
           type: integer
           nullable: true
           example: 54097
+        monthly_fee_kr:
+          type: integer
+          nullable: true
+          description: BRF monthly fee (avgift) in kr; NULL when the listing has no fee.
+          example: 4687
+        monthly_fee_per_m2:
+          type: number
+          nullable: true
+          description: >
+            Avgift per m² (kr/m²/month), derived at import from monthly_fee_kr /
+            living_area_m2. The value the `fee_per_sqm_*` sort and `max_fee_per_sqm`
+            filter operate on. NULL when the fee or area is missing.
+          example: 66.7
+        construction_year:
+          type: integer
+          nullable: true
+          description: >
+            Year the building was constructed (from the listing detail page).
+            Building age = current year − this. The value the
+            `construction_year_*` sort and min/max_construction_year filters use.
+          example: 1992
+        photo_urls:
+          type: array
+          nullable: true
+          description: >
+            Ordered listing photo URLs (Booli CDN, webp), primary image first.
+            The full gallery from the listing's detail page — not capped. NULL
+            when the listing has no photos.
+          items:
+            type: string
+            format: uri
+          example:
+            - https://bcdn.se/images/cache/54230613_1440x0.webp
+            - https://bcdn.se/images/cache/54230614_1440x0.webp
         kommun:
           type: string
           example: Tyresö
@@ -597,6 +668,36 @@ components:
           nullable: true
           description: Total number of apartments in the cooperative.
           example: 120
+        brf_kr_per_m2_trend:
+          type: integer
+          nullable: true
+          description: >
+            The BRF's price/m² trend in kr per year, derived at import from the
+            förening's own completed sales (least-squares slope over sold date).
+            Negative when prices are declining. NULL with fewer than two priced
+            sales. The value the `brf_trend_*` sort and `min_brf_trend` filter
+            operate on.
+          example: 1850
+        brf_kr_per_m2_2026:
+          type: integer
+          nullable: true
+          description: >
+            The BRF's average kr/m² for 2026 (the current year) from its own
+            completed sales — the latest point of the per-year history
+            `brf_kr_per_m2_2021 … brf_kr_per_m2_2026` (each derived at import; NULL
+            for a year with no priced sale). The value the `brf_price_*` sort
+            operates on.
+          example: 58200
+        brf_loan_per_m2:
+          type: number
+          nullable: true
+          description: >
+            The BRF's loan per m² (kr/m²), derived at import from brf_total_loan_kr
+            / brf_total_living_area_m2 (latest annual report). Only the current
+            figure is available — Booli exposes no loan history, so there is no
+            per-year series or trend. Lower means a less-indebted förening. The
+            value the `brf_loan_*` sort and `max_brf_loan_per_m2` filter operate on.
+          example: 4582.2
         school_1_name:
           type: string
           nullable: true
@@ -611,6 +712,21 @@ components:
           nullable: true
           description: Latest-year socio-economic index of the nearest school.
           example: 92.0
+        avg_school_socio_index_1:
+          type: number
+          nullable: true
+          description: >
+            The closest school's latest-year socio-economic index. The value the
+            `school_index_1_*` sort and `min_school_index_1` filter operate on.
+          example: 92.0
+        avg_school_socio_index_3:
+          type: number
+          nullable: true
+          description: >
+            Average latest-year socio-economic index across the 3 nearest schools
+            (a tighter radius). The value the `school_index_3_*` sort and
+            `min_school_index_3` filter operate on.
+          example: 89.1
         avg_school_socio_index:
           type: number
           nullable: true
@@ -619,6 +735,31 @@ components:
             nearest schools, ignoring those whose index is suppressed. The value
             the `school_index_*` sort and `min_school_index` filter operate on.
           example: 88.4
+        avg_school_socio_index_1_forecast:
+          type: number
+          nullable: true
+          description: >
+            Three-year-ahead least-squares projection of the closest school's
+            index. Sort-only via `school_forecast_1_*`. NULL without enough history.
+          example: 93.0
+        avg_school_socio_index_3_forecast:
+          type: number
+          nullable: true
+          description: >
+            Three-year-ahead projection of `avg_school_socio_index_3`. Sort-only
+            via `school_forecast_3_*`. NULL without enough history.
+          example: 90.0
+        avg_school_socio_index_forecast:
+          type: number
+          nullable: true
+          description: >
+            Three-year-ahead projection of `avg_school_socio_index`. For each of
+            the nearest schools a least-squares line is fitted to its available
+            per-year socio-economic index (2023–2026) and extrapolated; those
+            per-school projections are averaged, ignoring schools with fewer than
+            two years of data. Sort-only via `school_forecast_*`. NULL when no
+            nearby school has enough history to establish a trend.
+          example: 91.2
 
     Error:
       type: object
