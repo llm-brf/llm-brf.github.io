@@ -173,6 +173,7 @@ paths:
             `price_per_sqm_*` on kr/m² (best value first with `_asc`),
             `rooms_*` on room count, `area_*` on living area,
             `fee_per_sqm_*` on the monthly avgift per m² (`_asc` = cheapest to own
+            first), `fee_*` on the total monthly avgift in kr (`_asc` = lowest fee
             first), `brf_price_*` on the BRF's current-year (latest) average kr/m²,
             `construction_year_*` on the building's construction year
             (`_desc` = newest first), `brf_units_*` on the number of apartments in
@@ -201,6 +202,8 @@ paths:
               - area_desc
               - fee_per_sqm_asc
               - fee_per_sqm_desc
+              - fee_asc
+              - fee_desc
               - construction_year_asc
               - construction_year_desc
               - brf_units_asc
@@ -295,6 +298,16 @@ paths:
             minimum: 0
             maximum: 1000
           example: 80
+        - name: max_monthly_fee
+          in: query
+          required: false
+          description: >
+            Only listings whose total monthly avgift (`monthly_fee_kr`, kr/month)
+            is at most this value — caps the absolute fee regardless of size.
+          schema:
+            type: integer
+            minimum: 0
+          example: 5000
         - name: min_brf_units
           in: query
           required: false
@@ -417,7 +430,7 @@ paths:
               examples:
                 bad_sort:
                   value:
-                    error: "sort must be one of: area_asc, area_desc, brf_loan_asc, brf_loan_desc, brf_price_asc, brf_price_desc, brf_trend_asc, brf_trend_desc, brf_units_asc, brf_units_desc, construction_year_asc, construction_year_desc, fee_per_sqm_asc, fee_per_sqm_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, rooms_asc, rooms_desc, school_forecast_1_asc, school_forecast_1_desc, school_forecast_3_asc, school_forecast_3_desc, school_forecast_asc, school_forecast_desc, school_index_1_asc, school_index_1_desc, school_index_3_asc, school_index_3_desc, school_index_asc, school_index_desc"
+                    error: "sort must be one of: area_asc, area_desc, brf_loan_asc, brf_loan_desc, brf_price_asc, brf_price_desc, brf_trend_asc, brf_trend_desc, brf_units_asc, brf_units_desc, construction_year_asc, construction_year_desc, fee_asc, fee_desc, fee_per_sqm_asc, fee_per_sqm_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, rooms_asc, rooms_desc, school_forecast_1_asc, school_forecast_1_desc, school_forecast_3_asc, school_forecast_3_desc, school_forecast_asc, school_forecast_desc, school_index_1_asc, school_index_1_desc, school_index_3_asc, school_index_3_desc, school_index_asc, school_index_desc"
                 bad_limit:
                   value:
                     error: limit out of range (1-10)
@@ -516,6 +529,9 @@ components:
             max_fee_per_sqm:
               type: number
               nullable: true
+            max_monthly_fee:
+              type: integer
+              nullable: true
             min_brf_units:
               type: integer
               nullable: true
@@ -558,7 +574,8 @@ components:
         kr_per_m2, monthly_fee_kr (the BRF avgift in kr/month; NULL for listings
         with no fee), construction_year (the building's construction year),
         broker_agency, description, attributes (JSONB), photo_urls (ordered array
-        of listing photo URLs, primary first), source_url, kommun,
+        of listing photos, primary first; each {url, primaryLabel, alt} so floor
+        plans and maps are distinguishable from photos), source_url, kommun,
         location {lat, lng}.
 
         • BRF block (recovered by matching the listing address to the BRF
@@ -615,7 +632,9 @@ components:
         monthly_fee_kr:
           type: integer
           nullable: true
-          description: BRF monthly fee (avgift) in kr; NULL when the listing has no fee.
+          description: >
+            BRF monthly fee (avgift) in kr; NULL when the listing has no fee. The
+            value the `fee_*` sort and `max_monthly_fee` filter operate on.
           example: 4687
         monthly_fee_per_m2:
           type: number
@@ -637,15 +656,38 @@ components:
           type: array
           nullable: true
           description: >
-            Ordered listing photo URLs (Booli CDN, webp), primary image first.
-            The full gallery from the listing's detail page — not capped. NULL
-            when the listing has no photos.
+            Ordered listing photos (Booli CDN, webp), primary image first. The
+            full gallery from the listing's detail page — not capped. Each item
+            is an object carrying the photo's URL plus its category. NULL when the
+            listing has no photos.
           items:
-            type: string
-            format: uri
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+                description: Booli CDN URL (1440px wide, webp).
+              primaryLabel:
+                type: string
+                nullable: true
+                description: >
+                  Booli's category for the image — e.g. "floorplan" (planritning),
+                  "property_map", "exterior", "interior", "kitchen/dining_room",
+                  "bathroom/laundry", "balcony/view". NULL when Booli left the
+                  image uncategorized.
+                example: floorplan
+              alt:
+                type: string
+                nullable: true
+                description: Swedish alt text Booli provides for the image.
+                example: Planlösning
           example:
-            - https://bcdn.se/images/cache/54230613_1440x0.webp
-            - https://bcdn.se/images/cache/54230614_1440x0.webp
+            - url: https://bcdn.se/images/cache/54230613_1440x0.webp
+              primaryLabel: exterior
+              alt: Exteriörbild
+            - url: https://bcdn.se/images/cache/54244810_1440x0.webp
+              primaryLabel: floorplan
+              alt: Planlösning
         kommun:
           type: string
           example: Tyresö
