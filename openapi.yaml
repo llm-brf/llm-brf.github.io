@@ -180,7 +180,16 @@ paths:
             the cooperative, `brf_loan_*` on `brf_loan_per_m2` (the BRF's loan per
             m²; `_asc` = least-indebted first), `brf_trend_*` on
             `brf_kr_per_m2_trend` (the BRF's price/m² trend in kr per year; `_desc`
-            = fastest appreciating first). The school sorts come in three radii —
+            = fastest appreciating first), `brf_fee_*` on the BRF's current-year
+            (latest) average avgift per m² (`_asc` = cheapest to own first) and
+            `brf_fee_trend_*` on `brf_fee_per_m2_trend` (the BRF's avgift/m² trend
+            in kr per year; `_asc` = slowest fee growth first). The all-history
+            `brf_trend_*`/`brf_fee_trend_*` slopes have **windowed** counterparts
+            fit over only the last 5 years — `brf_price_trend_5y_*` and
+            `brf_fee_trend_5y_*` — plus forward projections of each metric three
+            years past the latest year: `brf_price_forecast_*` (projected kr/m²;
+            `_desc` = highest projected price first) and `brf_fee_forecast_*`
+            (projected avgift/m²; `_asc` = lowest projected fee first). The school sorts come in three radii —
             `school_index_1_*` (closest school), `school_index_3_*` (3 nearest) and
             `school_index_*` (5 nearest) — on the current latest-year
             socio-economic index (`_desc` = best first), with matching
@@ -214,6 +223,18 @@ paths:
               - brf_price_desc
               - brf_trend_asc
               - brf_trend_desc
+              - brf_fee_asc
+              - brf_fee_desc
+              - brf_fee_trend_asc
+              - brf_fee_trend_desc
+              - brf_price_trend_5y_asc
+              - brf_price_trend_5y_desc
+              - brf_price_forecast_asc
+              - brf_price_forecast_desc
+              - brf_fee_trend_5y_asc
+              - brf_fee_trend_5y_desc
+              - brf_fee_forecast_asc
+              - brf_fee_forecast_desc
               - school_index_1_asc
               - school_index_1_desc
               - school_index_3_asc
@@ -338,6 +359,60 @@ paths:
           schema:
             type: integer
           example: 0
+        - name: max_brf_fee_trend
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_fee_per_m2_trend` (the BRF's avgift/m² trend in
+            kr per year, from its own sold listings) is at most this value — a lower
+            cap targets föreningar with the most controlled fee growth. May be
+            negative; use 0 to surface only föreningar with non-rising fees.
+          schema:
+            type: number
+          example: 5
+        - name: min_brf_price_trend_5y
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_kr_per_m2_trend_5y` (the BRF's price/m² trend in
+            kr per year, fit over only the **last 5 years** of its sold listings) is
+            at least this value. The recent-momentum counterpart of `min_brf_trend`,
+            which spans the BRF's entire history. May be negative.
+          schema:
+            type: integer
+          example: 0
+        - name: min_brf_price_forecast
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_kr_per_m2_forecast` (the BRF's price/m²
+            projected 3 years past the latest year from its 5-year trend) is at least
+            this value — a floor on the projected future price level.
+          schema:
+            type: integer
+            minimum: 0
+          example: 50000
+        - name: max_brf_fee_trend_5y
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_fee_per_m2_trend_5y` (the BRF's avgift/m² trend
+            in kr per year, fit over only the **last 5 years**) is at most this value
+            — the recent-momentum counterpart of `max_brf_fee_trend`. May be negative.
+          schema:
+            type: number
+          example: 5
+        - name: max_brf_fee_forecast
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_fee_per_m2_forecast` (the BRF's avgift/m²
+            projected 3 years past the latest year from its 5-year trend) is at most
+            this value — a cap on the projected future monthly fee per m².
+          schema:
+            type: number
+            minimum: 0
+          example: 80
         - name: min_school_index
           in: query
           required: false
@@ -430,7 +505,7 @@ paths:
               examples:
                 bad_sort:
                   value:
-                    error: "sort must be one of: area_asc, area_desc, brf_loan_asc, brf_loan_desc, brf_price_asc, brf_price_desc, brf_trend_asc, brf_trend_desc, brf_units_asc, brf_units_desc, construction_year_asc, construction_year_desc, fee_asc, fee_desc, fee_per_sqm_asc, fee_per_sqm_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, rooms_asc, rooms_desc, school_forecast_1_asc, school_forecast_1_desc, school_forecast_3_asc, school_forecast_3_desc, school_forecast_asc, school_forecast_desc, school_index_1_asc, school_index_1_desc, school_index_3_asc, school_index_3_desc, school_index_asc, school_index_desc"
+                    error: "sort must be one of: area_asc, area_desc, brf_fee_asc, brf_fee_desc, brf_fee_forecast_asc, brf_fee_forecast_desc, brf_fee_trend_5y_asc, brf_fee_trend_5y_desc, brf_fee_trend_asc, brf_fee_trend_desc, brf_loan_asc, brf_loan_desc, brf_price_asc, brf_price_desc, brf_price_forecast_asc, brf_price_forecast_desc, brf_price_trend_5y_asc, brf_price_trend_5y_desc, brf_trend_asc, brf_trend_desc, brf_units_asc, brf_units_desc, construction_year_asc, construction_year_desc, fee_asc, fee_desc, fee_per_sqm_asc, fee_per_sqm_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, rooms_asc, rooms_desc, school_forecast_1_asc, school_forecast_1_desc, school_forecast_3_asc, school_forecast_3_desc, school_forecast_asc, school_forecast_desc, school_index_1_asc, school_index_1_desc, school_index_3_asc, school_index_3_desc, school_index_asc, school_index_desc"
                 bad_limit:
                   value:
                     error: limit out of range (1-10)
@@ -540,6 +615,21 @@ components:
               nullable: true
             min_brf_trend:
               type: integer
+              nullable: true
+            max_brf_fee_trend:
+              type: number
+              nullable: true
+            min_brf_price_trend_5y:
+              type: integer
+              nullable: true
+            min_brf_price_forecast:
+              type: integer
+              nullable: true
+            max_brf_fee_trend_5y:
+              type: number
+              nullable: true
+            max_brf_fee_forecast:
+              type: number
               nullable: true
             min_school_index:
               type: number
@@ -730,6 +820,31 @@ components:
             for a year with no priced sale). The value the `brf_price_*` sort
             operates on.
           example: 58200
+        brf_kr_per_m2_trend_3y:
+          type: integer
+          nullable: true
+          description: >
+            The BRF's price/m² trend in kr per year, fit by least-squares over only
+            the **last 3 years** of the per-year average series (vs the all-history
+            `brf_kr_per_m2_trend`). NULL with <2 priced years in the window.
+          example: 2100
+        brf_kr_per_m2_trend_5y:
+          type: integer
+          nullable: true
+          description: >
+            As `brf_kr_per_m2_trend_3y` but fit over the **last 5 years**. The value
+            the `brf_price_trend_5y_*` sort and `min_brf_price_trend_5y` filter
+            operate on.
+          example: 1950
+        brf_kr_per_m2_forecast:
+          type: integer
+          nullable: true
+          description: >
+            The BRF's price/m² projected **3 years past the latest year** (i.e. 2029),
+            extrapolating the 5-year least-squares fit (intercept + slope × target).
+            NULL with <2 priced years in the 5-year window. The value the
+            `brf_price_forecast_*` sort and `min_brf_price_forecast` filter operate on.
+          example: 64000
         brf_loan_per_m2:
           type: number
           nullable: true
@@ -740,6 +855,52 @@ components:
             per-year series or trend. Lower means a less-indebted förening. The
             value the `brf_loan_*` sort and `max_brf_loan_per_m2` filter operate on.
           example: 4582.2
+        brf_fee_per_m2_trend:
+          type: number
+          nullable: true
+          description: >
+            The BRF's avgift (monthly fee) per m² trend in kr per year, derived at
+            import from the förening's own completed bostadsrätt sales (least-squares
+            slope of monthly_fee_kr / living_area_m2 over sold date). Negative when
+            fees are declining. NULL with fewer than two fee-bearing sales. The value
+            the `brf_fee_trend_*` sort and `max_brf_fee_trend` filter operate on.
+          example: 4.5
+        brf_fee_per_m2_2026:
+          type: number
+          nullable: true
+          description: >
+            The BRF's average avgift per m² (kr/m²/month) for 2026 (the current year)
+            from its own completed sales — the latest point of the 15-year per-year
+            history `brf_fee_per_m2_2012 … brf_fee_per_m2_2026` (each derived at
+            import; NULL for a year with no fee-bearing sale). The value the
+            `brf_fee_*` sort operates on.
+          example: 62.5
+        brf_fee_per_m2_trend_5y:
+          type: number
+          nullable: true
+          description: >
+            The BRF's avgift/m² trend in kr per year, fit by least-squares over only
+            the **last 5 years** of the per-year average series (vs the all-history
+            `brf_fee_per_m2_trend`). Negative when fees are declining. NULL with <2
+            fee-bearing years in the window. The value the `brf_fee_trend_5y_*` sort
+            and `max_brf_fee_trend_5y` filter operate on.
+          example: 3.2
+        brf_fee_per_m2_trend_15y:
+          type: number
+          nullable: true
+          description: >
+            As `brf_fee_per_m2_trend_5y` but fit over the **last 15 years** — the
+            long-run avgift trajectory. NULL with <2 fee-bearing years.
+          example: 2.6
+        brf_fee_per_m2_forecast:
+          type: number
+          nullable: true
+          description: >
+            The BRF's avgift/m² (kr/m²/month) projected **3 years past the latest
+            year** (i.e. 2029), extrapolating the 5-year least-squares fit. NULL with
+            <2 fee-bearing years in the 5-year window. The value the
+            `brf_fee_forecast_*` sort and `max_brf_fee_forecast` filter operate on.
+          example: 71.5
         school_1_name:
           type: string
           nullable: true
