@@ -156,6 +156,17 @@ paths:
             type: string
             enum: [bostadsrätt, villa, radhus, fritidshus]
           example: bostadsrätt
+        - name: kommun
+          in: query
+          required: false
+          description: >
+            Restrict to listings in a single kommun. Exact match on the stored
+            kommun name (case and spelling must match, e.g. `Tyresö`). Call
+            `GET /kommuns` to enumerate the values this filter accepts.
+          schema:
+            type: string
+            maxLength: 100
+          example: Tyresö
         - name: min_rooms
           in: query
           required: false
@@ -553,6 +564,262 @@ paths:
                   value:
                     error: brf_org_number must be 10 digits (NNNNNN-NNNN)
 
+  /kommuns:
+    get:
+      summary: List available kommuns
+      operationId: listKommuns
+      description: >
+        Returns every kommun present in the dataset, each with its current
+        number of listings, ordered by name. Use this to populate a kommun
+        picker and to discover the exact values the `kommun` filter on
+        `GET /advertisements` accepts. Each kommun also carries `price_stats`:
+        the average and median sale price per m² (kr/m²) per year and object
+        type (bostadsrätt, villa, radhus, …), newest year first. Backed by a
+        small reference table refreshed on each data import — not a live scan
+        of the listings.
+      responses:
+        "200":
+          description: Kommuns returned (possibly empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KommunsList"
+
+  /brfs:
+    get:
+      summary: List housing cooperatives (browse & rank BRFs)
+      operationId: listBrfs
+      description: >
+        Returns one row per housing cooperative (förening) to support a
+        purchase decision at the BRF level rather than the individual listing.
+        Each row carries the BRF's identity, physical facts, financial health
+        (loan per m²), the full per-year price and avgift history with their
+        trends and three-year-ahead forecasts, the share of the BRF currently
+        on the market, and aggregates over the förening's **current**
+        advertisements (count + min/max/avg kr/m²).
+
+
+        Backed by a small materialized table (one row per `brf_org_number`,
+        ~88 rows) refreshed on each data import — not a live scan of the
+        listings. The result set is **capped at 10 rows**: choose a `sort` that
+        matches what you're optimising for (cheapest to own, fastest
+        appreciating, least indebted, most/least turnover, …) and narrow with
+        the filters. To then see a BRF's individual listings, call
+        `GET /advertisements?brf_org_number=<the BRF's org.nr>`.
+      parameters:
+        - name: brf_name_search
+          in: query
+          required: false
+          description: >
+            Case-insensitive substring match against the BRF name — use when the
+            exact name is unknown (e.g. `sjö` matches "Brf Sjötungan"). LIKE
+            metacharacters are matched literally.
+          schema:
+            type: string
+            maxLength: 100
+          example: sjö
+        - name: kommun
+          in: query
+          required: false
+          description: >
+            Restrict to cooperatives in this municipality (exact match). Discover
+            valid values via `GET /kommuns`.
+          schema:
+            type: string
+          example: Tyresö
+        - name: sort
+          in: query
+          required: false
+          description: >
+            Ordering of the (capped) result set. `name_*`/`kommun_*` sort
+            alphabetically; `units_*` on the number of apartments;
+            `construction_year_*` on the building year (`_desc` = newest first);
+            `loan_*` on `brf_loan_per_m2` (`_asc` = least indebted first);
+            `price_*` on the BRF's current-year (latest) average kr/m²;
+            `price_trend_*` on the all-history price/m² trend, `price_trend_5y_*`
+            on the 5-year window (`_desc` = fastest appreciating first),
+            `price_forecast_*` on the projected kr/m²; `fee_*` on the current-year
+            average avgift/m² (`_asc` = cheapest to own first), `fee_trend_*` /
+            `fee_trend_5y_*` on the avgift/m² trend (`_asc` = slowest fee growth
+            first), `fee_forecast_*` on the projected avgift/m²;
+            `pct_for_sale_*` on the share of the BRF on the market
+            (`_asc` = most stable first); `active_count_*` on the number of the
+            BRF's current listings; `active_avg_price_*` on the average kr/m²
+            of those listings. Rows missing the sorted value sort last.
+          schema:
+            type: string
+            default: name_asc
+            enum:
+              - name_asc
+              - name_desc
+              - kommun_asc
+              - kommun_desc
+              - units_asc
+              - units_desc
+              - construction_year_asc
+              - construction_year_desc
+              - loan_asc
+              - loan_desc
+              - price_asc
+              - price_desc
+              - price_trend_asc
+              - price_trend_desc
+              - price_trend_5y_asc
+              - price_trend_5y_desc
+              - price_forecast_asc
+              - price_forecast_desc
+              - fee_asc
+              - fee_desc
+              - fee_trend_asc
+              - fee_trend_desc
+              - fee_trend_5y_asc
+              - fee_trend_5y_desc
+              - fee_forecast_asc
+              - fee_forecast_desc
+              - pct_for_sale_asc
+              - pct_for_sale_desc
+              - active_count_asc
+              - active_count_desc
+              - active_avg_price_asc
+              - active_avg_price_desc
+          example: pct_for_sale_desc
+        - name: min_brf_units
+          in: query
+          required: false
+          description: Only cooperatives with at least this many apartments.
+          schema:
+            type: integer
+            minimum: 0
+          example: 50
+        - name: min_construction_year
+          in: query
+          required: false
+          description: Only cooperatives whose building was constructed in or after this year.
+          schema:
+            type: integer
+            minimum: 1500
+            maximum: 2100
+          example: 1970
+        - name: max_construction_year
+          in: query
+          required: false
+          description: Only cooperatives whose building was constructed in or before this year.
+          schema:
+            type: integer
+            minimum: 1500
+            maximum: 2100
+          example: 2020
+        - name: max_brf_loan_per_m2
+          in: query
+          required: false
+          description: >
+            Only cooperatives whose loan per m² (`brf_loan_per_m2`, kr/m²) is at
+            most this value — a lower cap targets less-indebted föreningar.
+          schema:
+            type: integer
+            minimum: 0
+          example: 6000
+        - name: min_brf_price_trend_5y
+          in: query
+          required: false
+          description: >
+            Only cooperatives whose `brf_kr_per_m2_trend_5y` (price/m² trend in kr
+            per year, fit over the last 5 years) is at least this value. May be
+            negative; use 0 to surface only non-declining föreningar.
+          schema:
+            type: integer
+          example: 0
+        - name: min_brf_price_forecast
+          in: query
+          required: false
+          description: >
+            Only cooperatives whose `brf_kr_per_m2_forecast` (price/m² projected
+            3 years past the latest year) is at least this value.
+          schema:
+            type: integer
+            minimum: 0
+          example: 50000
+        - name: max_brf_fee_trend_5y
+          in: query
+          required: false
+          description: >
+            Only cooperatives whose `brf_fee_per_m2_trend_5y` (avgift/m² trend in
+            kr per year over the last 5 years) is at most this value. May be
+            negative; use 0 to surface only föreningar with non-rising fees.
+          schema:
+            type: number
+          example: 5
+        - name: max_brf_fee_forecast
+          in: query
+          required: false
+          description: >
+            Only cooperatives whose `brf_fee_per_m2_forecast` (avgift/m² projected
+            3 years past the latest year) is at most this value.
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1000
+          example: 80
+        - name: min_brf_pct_for_sale
+          in: query
+          required: false
+          description: >
+            Only cooperatives whose `brf_pct_for_sale` (share of apartments
+            currently listed, percent) is at least this value — high turnover.
+          schema:
+            type: number
+            minimum: 0
+          example: 5
+        - name: max_brf_pct_for_sale
+          in: query
+          required: false
+          description: >
+            Only cooperatives whose `brf_pct_for_sale` is at most this value —
+            stable föreningar with few apartments on the market.
+          schema:
+            type: number
+            minimum: 0
+          example: 10
+        - name: min_active_listings
+          in: query
+          required: false
+          description: >
+            Only cooperatives with at least this many current advertisements
+            (`active_listing_count`).
+          schema:
+            type: integer
+            minimum: 0
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of rows to return (1–10). Capped at 10 by design.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 10
+      responses:
+        "200":
+          description: BRFs returned (possibly empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrfsList"
+        "400":
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                bad_sort:
+                  value:
+                    error: "sort must be one of: active_avg_price_asc, …"
+                bad_limit:
+                  value:
+                    error: limit out of range (1-10)
+
 components:
   schemas:
     AvgPricePerSqm:
@@ -595,6 +862,70 @@ components:
               nullable: true
               example: 3.0
 
+    KommunsList:
+      type: object
+      required:
+        - kommuns
+        - count
+      properties:
+        kommuns:
+          type: array
+          items:
+            type: object
+            required:
+              - kommun
+              - listing_count
+              - price_stats
+            properties:
+              kommun:
+                type: string
+                description: Kommun name; the exact value the `kommun` filter accepts.
+                example: Tyresö
+              listing_count:
+                type: integer
+                description: Number of advertisements currently in this kommun.
+                example: 433
+              price_stats:
+                type: array
+                description: >
+                  Average and median sale price per m² (kr/m²) over completed
+                  sales, one entry per (year, object_type) cell, ordered newest
+                  year first then by object type. Precomputed at import. May be
+                  empty if the kommun has no recorded sales.
+                items:
+                  type: object
+                  required:
+                    - year
+                    - object_type
+                    - avg_kr_per_m2
+                    - median_kr_per_m2
+                    - sample_count
+                  properties:
+                    year:
+                      type: integer
+                      description: Calendar year of the sales in this cell.
+                      example: 2026
+                    object_type:
+                      type: string
+                      description: Property type the stats are computed over.
+                      example: bostadsrätt
+                    avg_kr_per_m2:
+                      type: integer
+                      description: Mean sale price per m² (kr/m²) for this year and object type.
+                      example: 41000
+                    median_kr_per_m2:
+                      type: integer
+                      description: Median sale price per m² (kr/m²) for this year and object type.
+                      example: 40600
+                    sample_count:
+                      type: integer
+                      description: Number of completed sales behind this cell.
+                      example: 120
+        count:
+          type: integer
+          description: Number of distinct kommuns returned.
+          example: 1
+
     AdvertisementsList:
       type: object
       required:
@@ -615,6 +946,9 @@ components:
           description: Echo of the filters and sort that were applied.
           properties:
             property_type:
+              type: string
+              nullable: true
+            kommun:
               type: string
               nullable: true
             min_rooms:
@@ -1029,6 +1363,187 @@ components:
             two years of data. Sort-only via `school_forecast_*`. NULL when no
             nearby school has enough history to establish a trend.
           example: 91.2
+
+    BrfsList:
+      type: object
+      required:
+        - brfs
+        - count
+        - filters
+      properties:
+        brfs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Brf"
+        count:
+          type: integer
+          description: Number of rows returned (at most 10).
+          example: 10
+        filters:
+          type: object
+          description: Echo of the filters and sort that were applied.
+          properties:
+            brf_name_search:
+              type: string
+              nullable: true
+            kommun:
+              type: string
+              nullable: true
+            sort:
+              type: string
+              example: pct_for_sale_desc
+            min_brf_units:
+              type: integer
+              nullable: true
+            min_construction_year:
+              type: integer
+              nullable: true
+            max_construction_year:
+              type: integer
+              nullable: true
+            max_brf_loan_per_m2:
+              type: integer
+              nullable: true
+            min_brf_price_trend_5y:
+              type: integer
+              nullable: true
+            min_brf_price_forecast:
+              type: integer
+              nullable: true
+            max_brf_fee_trend_5y:
+              type: number
+              nullable: true
+            max_brf_fee_forecast:
+              type: number
+              nullable: true
+            min_brf_pct_for_sale:
+              type: number
+              nullable: true
+            max_brf_pct_for_sale:
+              type: number
+              nullable: true
+            min_active_listings:
+              type: integer
+              nullable: true
+            limit:
+              type: integer
+              example: 10
+
+    Brf:
+      type: object
+      description: >
+        One housing cooperative — a flat row collapsed from the denormalized
+        brf_* columns on `advertisements` (identical for every listing of the
+        same förening) plus the active-listing aggregates derived at import.
+        Fields fall into four groups:
+
+
+        • Identity / physical — brf_org_number (the key; pass it to
+        `/advertisements?brf_org_number=`), brf_booli_id, brf_name, kommun,
+        brf_construction_year, brf_num_units, brf_num_rental_units,
+        brf_total_living_area_m2, brf_plot_ownership, brf_is_genuine,
+        brf_annual_report_year, brf_has_valid_annual_report, brf_economy (JSONB).
+
+
+        • Financial — brf_total_loan_kr, brf_loan_per_m2.
+
+
+        • Price & fee dynamics — the per-year history series
+        (brf_kr_per_m2_2021…2026, brf_fee_per_m2_2012…2026), their trends
+        (brf_kr_per_m2_trend[_3y/_5y], brf_fee_per_m2_trend[_5y/_15y]) and
+        three-year-ahead forecasts (brf_kr_per_m2_forecast,
+        brf_fee_per_m2_forecast). Same semantics as the matching brf_* fields on
+        the Advertisement schema.
+
+
+        • Market activity — brf_pct_for_sale (share of the BRF on the market),
+        active_listing_count and active_min/max/avg_kr_per_m2 over the förening's
+        current advertisements.
+
+
+        additionalProperties is true so new flat columns appear without a spec
+        change; the authoritative full column list is the `brfs` table in
+        src/db/schema.sql.
+      additionalProperties: true
+      properties:
+        brf_org_number:
+          type: string
+          description: Swedish org.nr (`NNNNNN-NNNN`); the key for `/advertisements?brf_org_number=`.
+          example: "769625-3744"
+        brf_name:
+          type: string
+          nullable: true
+          example: Brf Sjötungan
+        kommun:
+          type: string
+          nullable: true
+          example: Tyresö
+        brf_num_units:
+          type: integer
+          nullable: true
+          description: Total number of apartments in the cooperative.
+          example: 120
+        brf_construction_year:
+          type: integer
+          nullable: true
+          example: 1992
+        brf_loan_per_m2:
+          type: number
+          nullable: true
+          description: The BRF's loan per m² (kr/m²); lower means a less-indebted förening.
+          example: 4582.2
+        brf_kr_per_m2_2026:
+          type: integer
+          nullable: true
+          description: The BRF's current-year (latest) average kr/m². The `price_*` sort reads this.
+          example: 58200
+        brf_kr_per_m2_trend_5y:
+          type: integer
+          nullable: true
+          description: Price/m² trend (kr per year) over the last 5 years. May be negative.
+          example: 1950
+        brf_kr_per_m2_forecast:
+          type: integer
+          nullable: true
+          description: Price/m² projected 3 years past the latest year.
+          example: 64000
+        brf_fee_per_m2_2026:
+          type: number
+          nullable: true
+          description: The BRF's current-year (latest) average avgift per m² (kr/m²/month).
+          example: 62.5
+        brf_fee_per_m2_forecast:
+          type: number
+          nullable: true
+          description: Avgift/m² projected 3 years past the latest year.
+          example: 71.5
+        brf_pct_for_sale:
+          type: number
+          nullable: true
+          description: >
+            Share of the BRF currently on the market, in percent
+            (active_listing_count / brf_num_units × 100). NULL when brf_num_units
+            is missing or zero.
+          example: 2.6
+        active_listing_count:
+          type: integer
+          description: Number of this BRF's current advertisements.
+          example: 3
+        active_min_kr_per_m2:
+          type: integer
+          nullable: true
+          description: Lowest kr/m² among the BRF's current advertisements.
+          example: 51000
+        active_max_kr_per_m2:
+          type: integer
+          nullable: true
+          description: Highest kr/m² among the BRF's current advertisements.
+          example: 57000
+        active_avg_kr_per_m2:
+          type: integer
+          nullable: true
+          description: Average kr/m² across the BRF's current advertisements.
+          example: 54000
 
     Error:
       type: object
