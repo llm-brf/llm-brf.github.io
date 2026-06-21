@@ -183,7 +183,10 @@ paths:
             = fastest appreciating first), `brf_fee_*` on the BRF's current-year
             (latest) average avgift per m² (`_asc` = cheapest to own first) and
             `brf_fee_trend_*` on `brf_fee_per_m2_trend` (the BRF's avgift/m² trend
-            in kr per year; `_asc` = slowest fee growth first). The all-history
+            in kr per year; `_asc` = slowest fee growth first).
+            `brf_pct_for_sale_*` sorts on `brf_pct_for_sale` (the share of the
+            BRF's apartments currently listed; `_asc` = most stable / fewest on
+            the market first). The all-history
             `brf_trend_*`/`brf_fee_trend_*` slopes have **windowed** counterparts
             fit over only the last 5 years — `brf_price_trend_5y_*` and
             `brf_fee_trend_5y_*` — plus forward projections of each metric three
@@ -225,6 +228,8 @@ paths:
               - brf_trend_desc
               - brf_fee_asc
               - brf_fee_desc
+              - brf_pct_for_sale_asc
+              - brf_pct_for_sale_desc
               - brf_fee_trend_asc
               - brf_fee_trend_desc
               - brf_price_trend_5y_asc
@@ -329,6 +334,19 @@ paths:
             type: integer
             minimum: 0
           example: 5000
+        - name: brf_org_number
+          in: query
+          required: false
+          description: >
+            Only listings belonging to the cooperative with this exact Swedish
+            org.nr (`brf_org_number`) — the identity filter for "all listings of
+            one BRF". Accepted with or without the hyphen (`769625-3744` or
+            `7696253744`); both normalise to the stored `NNNNNN-NNNN` form. A
+            value that is not 10 digits returns HTTP 400.
+          schema:
+            type: string
+            pattern: '^\d{6}-?\d{4}$'
+          example: "769625-3744"
         - name: min_brf_units
           in: query
           required: false
@@ -413,6 +431,28 @@ paths:
             type: number
             minimum: 0
           example: 80
+        - name: min_brf_pct_for_sale
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_pct_for_sale` (the share of the BRF's
+            apartments currently on the market, in percent) is at least this
+            value — surfaces föreningar with unusually high turnover.
+          schema:
+            type: number
+            minimum: 0
+          example: 5
+        - name: max_brf_pct_for_sale
+          in: query
+          required: false
+          description: >
+            Only listings whose `brf_pct_for_sale` (the share of the BRF's
+            apartments currently on the market, in percent) is at most this
+            value — targets stable föreningar with few apartments listed.
+          schema:
+            type: number
+            minimum: 0
+          example: 10
         - name: min_school_index
           in: query
           required: false
@@ -505,10 +545,13 @@ paths:
               examples:
                 bad_sort:
                   value:
-                    error: "sort must be one of: area_asc, area_desc, brf_fee_asc, brf_fee_desc, brf_fee_forecast_asc, brf_fee_forecast_desc, brf_fee_trend_5y_asc, brf_fee_trend_5y_desc, brf_fee_trend_asc, brf_fee_trend_desc, brf_loan_asc, brf_loan_desc, brf_price_asc, brf_price_desc, brf_price_forecast_asc, brf_price_forecast_desc, brf_price_trend_5y_asc, brf_price_trend_5y_desc, brf_trend_asc, brf_trend_desc, brf_units_asc, brf_units_desc, construction_year_asc, construction_year_desc, fee_asc, fee_desc, fee_per_sqm_asc, fee_per_sqm_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, rooms_asc, rooms_desc, school_forecast_1_asc, school_forecast_1_desc, school_forecast_3_asc, school_forecast_3_desc, school_forecast_asc, school_forecast_desc, school_index_1_asc, school_index_1_desc, school_index_3_asc, school_index_3_desc, school_index_asc, school_index_desc"
+                    error: "sort must be one of: area_asc, area_desc, brf_fee_asc, brf_fee_desc, brf_fee_forecast_asc, brf_fee_forecast_desc, brf_fee_trend_5y_asc, brf_fee_trend_5y_desc, brf_fee_trend_asc, brf_fee_trend_desc, brf_loan_asc, brf_loan_desc, brf_pct_for_sale_asc, brf_pct_for_sale_desc, brf_price_asc, brf_price_desc, brf_price_forecast_asc, brf_price_forecast_desc, brf_price_trend_5y_asc, brf_price_trend_5y_desc, brf_trend_asc, brf_trend_desc, brf_units_asc, brf_units_desc, construction_year_asc, construction_year_desc, fee_asc, fee_desc, fee_per_sqm_asc, fee_per_sqm_desc, listed_date, price_asc, price_desc, price_per_sqm_asc, price_per_sqm_desc, rooms_asc, rooms_desc, school_forecast_1_asc, school_forecast_1_desc, school_forecast_3_asc, school_forecast_3_desc, school_forecast_asc, school_forecast_desc, school_index_1_asc, school_index_1_desc, school_index_3_asc, school_index_3_desc, school_index_asc, school_index_desc"
                 bad_limit:
                   value:
                     error: limit out of range (1-10)
+                bad_brf_org_number:
+                  value:
+                    error: brf_org_number must be 10 digits (NNNNNN-NNNN)
 
 components:
   schemas:
@@ -607,6 +650,11 @@ components:
             max_monthly_fee:
               type: integer
               nullable: true
+            brf_org_number:
+              type: string
+              nullable: true
+              description: Normalised to the stored `NNNNNN-NNNN` form.
+              example: "769625-3744"
             min_brf_units:
               type: integer
               nullable: true
@@ -629,6 +677,12 @@ components:
               type: number
               nullable: true
             max_brf_fee_forecast:
+              type: number
+              nullable: true
+            min_brf_pct_for_sale:
+              type: number
+              nullable: true
+            max_brf_pct_for_sale:
               type: number
               nullable: true
             min_school_index:
@@ -901,6 +955,18 @@ components:
             <2 fee-bearing years in the 5-year window. The value the
             `brf_fee_forecast_*` sort and `max_brf_fee_forecast` filter operate on.
           example: 71.5
+        brf_pct_for_sale:
+          type: number
+          nullable: true
+          description: >
+            Share of the BRF currently on the market, in percent: the count of
+            this förening's advertisements divided by `brf_num_units` (the total
+            number of apartments), derived at import and identical for every
+            listing of the same BRF. A high value flags unusually heavy turnover;
+            a low value a stable cooperative. NULL when `brf_num_units` is
+            missing or zero. The value the `brf_pct_for_sale_*` sort and the
+            `min_brf_pct_for_sale` / `max_brf_pct_for_sale` filters operate on.
+          example: 2.6
         school_1_name:
           type: string
           nullable: true
