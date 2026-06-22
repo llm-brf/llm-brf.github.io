@@ -167,6 +167,18 @@ paths:
             type: string
             maxLength: 100
           example: Tyresö
+        - name: omrade
+          in: query
+          required: false
+          description: >
+            Restrict to listings in a single område (sub-kommun neighborhood /
+            stadsdel, e.g. `Trollbäcken`). Exact match on the stored area name.
+            Usually combined with `kommun`, since område names recur across
+            kommuns. Call `GET /areas` to enumerate the values this filter accepts.
+          schema:
+            type: string
+            maxLength: 100
+          example: Trollbäcken
         - name: min_rooms
           in: query
           required: false
@@ -585,6 +597,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/KommunsList"
 
+  /areas:
+    get:
+      summary: List sub-kommun områden (neighborhoods / stadsdelar)
+      operationId: listAreas
+      description: >
+        Returns the områden (sub-kommun neighborhoods / stadsdelar) present in the
+        dataset, one row per `(kommun, område)` with its current number of
+        listings, ordered by kommun then område. The område is the geographic tier
+        between a whole kommun and a single BRF. Use this to populate an område
+        picker, to discover the exact values the `omrade` filter on
+        `GET /advertisements` and `GET /brfs` accepts, and to answer "how many
+        områden are in kommun X" (call with `?kommun=X`). Backed by a small
+        reference table refreshed on each data import — not a live scan of the
+        listings.
+      parameters:
+        - name: kommun
+          in: query
+          required: false
+          description: >
+            Restrict the catalogue to a single kommun (exact match). Discover
+            valid values via `GET /kommuns`.
+          schema:
+            type: string
+            maxLength: 100
+          example: Tyresö
+        - name: name_search
+          in: query
+          required: false
+          description: >
+            Case-insensitive substring match against the område name — use when
+            the exact name is unknown (e.g. `troll` matches "Trollbäcken"). LIKE
+            metacharacters are matched literally.
+          schema:
+            type: string
+            maxLength: 100
+          example: troll
+      responses:
+        "200":
+          description: Områden returned (possibly empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AreasList"
+
   /brfs:
     get:
       summary: List housing cooperatives (browse & rank BRFs)
@@ -627,6 +683,17 @@ paths:
           schema:
             type: string
           example: Tyresö
+        - name: omrade
+          in: query
+          required: false
+          description: >
+            Restrict to cooperatives in a single område (sub-kommun neighborhood /
+            stadsdel, e.g. `Trollbäcken`; exact match). Usually combined with
+            `kommun`. Discover valid values via `GET /areas`.
+          schema:
+            type: string
+            maxLength: 100
+          example: Trollbäcken
         - name: sort
           in: query
           required: false
@@ -926,6 +993,50 @@ components:
           description: Number of distinct kommuns returned.
           example: 1
 
+    AreasList:
+      type: object
+      required:
+        - areas
+        - count
+        - filters
+      properties:
+        areas:
+          type: array
+          items:
+            type: object
+            required:
+              - kommun
+              - area_name
+              - listing_count
+            properties:
+              kommun:
+                type: string
+                description: The kommun the område belongs to.
+                example: Tyresö
+              area_name:
+                type: string
+                description: >
+                  Område name; the exact value the `omrade` filter accepts.
+                example: Trollbäcken
+              listing_count:
+                type: integer
+                description: Number of advertisements currently in this område.
+                example: 12
+        count:
+          type: integer
+          description: Number of (kommun, område) rows returned.
+          example: 10
+        filters:
+          type: object
+          description: Echo of the filters that were applied.
+          properties:
+            kommun:
+              type: string
+              nullable: true
+            name_search:
+              type: string
+              nullable: true
+
     AdvertisementsList:
       type: object
       required:
@@ -949,6 +1060,9 @@ components:
               type: string
               nullable: true
             kommun:
+              type: string
+              nullable: true
+            omrade:
               type: string
               nullable: true
             min_rooms:
@@ -1169,6 +1283,14 @@ components:
         kommun:
           type: string
           example: Tyresö
+        area_name:
+          type: string
+          nullable: true
+          description: >
+            Sub-kommun område (neighborhood / stadsdel, Booli descriptiveAreaName).
+            The value the `omrade` filter operates on. NULL when Booli supplies no
+            område for the listing.
+          example: Trollbäcken
         location:
           type: object
           nullable: true
@@ -1389,6 +1511,9 @@ components:
             kommun:
               type: string
               nullable: true
+            omrade:
+              type: string
+              nullable: true
             sort:
               type: string
               example: pct_for_sale_desc
@@ -1478,6 +1603,13 @@ components:
           type: string
           nullable: true
           example: Tyresö
+        area_name:
+          type: string
+          nullable: true
+          description: >
+            Sub-kommun område (neighborhood / stadsdel), copied from the BRF's
+            advertisements. The value the `omrade` filter operates on.
+          example: Trollbäcken
         brf_num_units:
           type: integer
           nullable: true
