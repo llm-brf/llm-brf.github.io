@@ -1018,6 +1018,43 @@ components:
                 nullable: true
                 description: Share of that stock currently listed (listing_count_br / units_in_scope_br × 100).
                 example: 6.9
+              num_sales_br_2026:
+                type: integer
+                nullable: true
+                description: >
+                  SOLD-HISTORY (self, BR completed sales): number of bostadsrätt sales
+                  in 2026. One per year `num_sales_br_2021…2026`. This block is on every
+                  geo level (cities/kommuns/areas) and on the BRF (as `brf_num_sales_*`).
+                example: 1800
+              turnover_br_2026:
+                type: number
+                nullable: true
+                description: >
+                  Share of the BR unit stock sold in 2026 (`num_sales_br_2026 /
+                  units_in_scope_br × 100`); per year `turnover_br_2021…2026`, plus the
+                  cumulative `turnover_br_agg_3y` / `turnover_br_agg_5y`.
+                example: 3.5
+              sold_kr_per_m2_br_2026:
+                type: integer
+                nullable: true
+                description: >
+                  Average SOLD price/m² in 2026, segmented PER boende type like the
+                  snapshot — `sold_kr_per_m2_{br,villa,radhus,fritids}_<year>` (per year
+                  `…_2021…2026`) with `…_trend_3y` / `_trend_5y` / `_forecast` each. The
+                  avgift/m² counterpart `sold_fee_per_m2_br_*` is bostadsrätt-only.
+                  Distinct from the current-listing `avg_kr_per_m2_br` snapshot (asking,
+                  not sold).
+                example: 79000
+              school_socio_index_2026:
+                type: number
+                nullable: true
+                description: >
+                  Pooled SOLD-era school history (self): mean over the level's listings
+                  of each listing's nearest-5-school socio index for 2026 (per year
+                  `school_socio_index_2023…2026`), with `school_socio_index_trend_3y` /
+                  `_trend_5y` / `_forecast`. Not per-type (school is a place attribute);
+                  the latest-year value equals the snapshot `avg_school_socio_index`.
+                example: 102.5
               avg_loan_per_m2_br:
                 type: number
                 nullable: true
@@ -1126,6 +1163,16 @@ components:
                   COPIED DOWN from the parent city — the city's pct_for_sale_br, so a
                   kommun row shows whether it is more/less on-market than its city
                   (compare pct_for_sale_br vs this). city_units_in_scope_br is alongside.
+                example: 6.9
+              city_turnover_br_agg_5y:
+                type: number
+                nullable: true
+                description: >
+                  COPIED DOWN from the parent city — the city's 5-year cumulative BR
+                  turnover, so a kommun compares its own `turnover_br_agg_5y` to its
+                  city's. The full city sold-history SUMMARY rides along as
+                  `city_{sold_kr_per_m2,sold_fee_per_m2,turnover_br}_*` (the per-year
+                  history stays on GET /cities, not copied down).
                 example: 6.9
               avg_school_socio_index:
                 type: number
@@ -1240,6 +1287,17 @@ components:
                 nullable: true
                 description: Share of that stock currently listed (listing_count_br / units_in_scope_br × 100).
                 example: 6.4
+              turnover_br_2026:
+                type: number
+                nullable: true
+                description: >
+                  Sold-history (self): share of the område's BR stock sold in 2026
+                  (per year `turnover_br_2021…2026`, + `turnover_br_agg_3y/5y`), plus
+                  the `num_sales_br_*` / `sold_kr_per_m2_*` / `sold_fee_per_m2_*` block
+                  (same shape as GET /cities). An område additionally carries its
+                  ancestors' summaries copied down: `kommun_*` and `city_*`
+                  (`kommun_turnover_br_agg_5y`, `city_sold_kr_per_m2_trend_5y`, …).
+                example: 3.0
         count:
           type: integer
           description: Number of (kommun, område) rows returned.
@@ -1651,6 +1709,35 @@ components:
             missing or zero. The value the `brf_pct_for_sale_*` sort and the
             `min_brf_pct_for_sale` / `max_brf_pct_for_sale` filters operate on.
           example: 2.6
+        brf_num_sales_2026:
+          type: integer
+          nullable: true
+          description: >
+            BRF sold-history (self): number of the förening's completed sales in
+            2026, from its own sales. One per year `brf_num_sales_2021…2026`;
+            NULL for a BRF never seen in the staged sales, 0 for an in-scope year
+            with no sale.
+          example: 3
+        brf_turnover_2026:
+          type: number
+          nullable: true
+          description: >
+            Share of the BRF's apartments sold in 2026 (`brf_num_sales_2026 /
+            brf_num_units × 100`). One per year `brf_turnover_2021…2026`, plus the
+            cumulative `brf_turnover_agg_3y` / `brf_turnover_agg_5y` (sales summed
+            over the window ÷ units × 100) as the robust comparison level.
+          example: 3.0
+        kommun_turnover_br_agg_5y:
+          type: number
+          nullable: true
+          description: >
+            COPIED DOWN from the kommun — the kommun's 5-year cumulative BR turnover,
+            so a listing can be compared to its kommun's liquidity in one row. Every
+            ancestor's sold-history SUMMARY rides along this way:
+            `{area,kommun,city}_{sold_kr_per_m2,sold_fee_per_m2,turnover_br}_*`
+            (last-year + 3y/5y trend/agg + forecast). The per-year history is NOT
+            copied down — it lives on the område/kommun/city rows (GET /areas etc.).
+          example: 6.0
         school_1_name:
           type: string
           nullable: true
@@ -1885,6 +1972,24 @@ components:
             (active_listing_count / brf_num_units × 100). NULL when brf_num_units
             is missing or zero.
           example: 2.6
+        brf_num_sales_2026:
+          type: integer
+          nullable: true
+          description: >
+            Sold-history (self): the förening's completed-sale COUNT in 2026 (one
+            per year `brf_num_sales_2021…2026`).
+          example: 3
+        brf_turnover_2026:
+          type: number
+          nullable: true
+          description: >
+            Share of the BRF's apartments sold in 2026 (per year
+            `brf_turnover_2021…2026`), plus `brf_turnover_agg_3y` /
+            `brf_turnover_agg_5y` (cumulative share sold over the window). The
+            price/fee sold-history is the `brf_kr_per_m2_*` / `brf_fee_per_m2_*`
+            series above; ancestor summaries are carried as
+            `{area,kommun,city}_{sold_kr_per_m2,sold_fee_per_m2,turnover_br}_*`.
+          example: 3.0
         active_listing_count:
           type: integer
           description: Number of this BRF's current advertisements.
