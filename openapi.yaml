@@ -576,6 +576,26 @@ paths:
                   value:
                     error: brf_org_number must be 10 digits (NNNNNN-NNNN)
 
+  /cities:
+    get:
+      summary: List cities (top of the geo hierarchy)
+      operationId: listCities
+      description: >
+        Returns one row per city — the level above kommun, an explicit grouping of
+        kommuns (e.g. "Stockholm" spans every Stockholms-län kommun), ordered by
+        name. Each row carries its current listing_count and the aggregated-up
+        avg/median asking price per m² (kr/m²) and avgift per m² over the city's
+        current advertisements. The root of the hierarchical-stats model, so it has
+        no copied-down parent columns. Backed by a small reference table refreshed
+        on each data import — not a live scan of the listings.
+      responses:
+        "200":
+          description: Cities returned (possibly empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CitiesList"
+
   /kommuns:
     get:
       summary: List available kommuns
@@ -929,6 +949,105 @@ components:
               nullable: true
               example: 3.0
 
+    CitiesList:
+      type: object
+      required:
+        - cities
+        - count
+      properties:
+        cities:
+          type: array
+          items:
+            type: object
+            # Per-boende-type stats are segmented by object_type with a <type>
+            # suffix (br / villa / radhus / fritids). The properties below are a
+            # representative sample; the authoritative full set is the cities table
+            # in src/db/schema.sql (see docs/hierarchical-stats.md).
+            additionalProperties: true
+            required:
+              - city
+              - listing_count
+            properties:
+              city:
+                type: string
+                description: City name; the top of the geo hierarchy.
+                example: Stockholm
+              listing_count:
+                type: integer
+                description: Total advertisements currently in this city (all boende types).
+                example: 4300
+              listing_count_br:
+                type: integer
+                description: >
+                  Sample size for the bostadsrätt stats — carried beside every stat
+                  so low-sample (noisy) cells can be filtered. One per type
+                  (listing_count_villa / _radhus / _fritids).
+                example: 3600
+              avg_kr_per_m2_br:
+                type: integer
+                nullable: true
+                description: >
+                  Aggregated-up mean asking price per m² for bostadsrätter, over the
+                  city's current advertisements. Per type: _br / _villa / _radhus /
+                  _fritids.
+                example: 79000
+              median_kr_per_m2_br:
+                type: integer
+                nullable: true
+                description: Aggregated-up median asking price per m² for bostadsrätter (per type).
+                example: 78000
+              avg_fee_per_m2_br:
+                type: number
+                nullable: true
+                description: Mean avgift per m²/month (bostadsrätt only — fee is a BRF concept).
+                example: 54.0
+              median_fee_per_m2_br:
+                type: number
+                nullable: true
+                description: Median avgift per m²/month (bostadsrätt only).
+                example: 53.0
+              units_in_scope_br:
+                type: integer
+                nullable: true
+                description: >
+                  Σ brf_num_units over the city's distinct BRFs — the cooperative
+                  housing stock in import scope.
+                example: 52000
+              pct_for_sale_br:
+                type: number
+                nullable: true
+                description: Share of that stock currently listed (listing_count_br / units_in_scope_br × 100).
+                example: 6.9
+              avg_loan_per_m2_br:
+                type: number
+                nullable: true
+                description: >
+                  Mean BRF loan per m² over the city's bostadsrätt listings (BRF
+                  balance-sheet health; median_loan_per_m2_br alongside). Bostadsrätt
+                  only.
+                example: 5200.0
+              median_living_area_m2_br:
+                type: number
+                nullable: true
+                description: >
+                  Median dwelling size (m²) for bostadsrätter — context for kr/m²
+                  (per type: _br / _villa / _radhus / _fritids).
+                example: 62.0
+              avg_school_socio_index:
+                type: number
+                nullable: true
+                description: >
+                  Pooled (not per-type) mean of each listing's avg_school_socio_index
+                  (its 5-nearest-school socio-economic average) over the city's
+                  advertisements — the school environment. median_school_socio_index
+                  is alongside. School quality is a place attribute, so it is not
+                  segmented by boende type.
+                example: 102.3
+        count:
+          type: integer
+          description: Number of distinct cities returned.
+          example: 1
+
     KommunsList:
       type: object
       required:
@@ -939,6 +1058,9 @@ components:
           type: array
           items:
             type: object
+            # Per-type stats use a <type> suffix (br / villa / radhus / fritids);
+            # the sample below is representative, full set in src/db/schema.sql.
+            additionalProperties: true
             required:
               - kommun
               - listing_count
@@ -952,6 +1074,67 @@ components:
                 type: integer
                 description: Number of advertisements currently in this kommun.
                 example: 433
+              city:
+                type: string
+                nullable: true
+                description: >
+                  The city this kommun belongs to (the level above kommun, an
+                  explicit grouping — see the hierarchical-stats model). NULL when
+                  the kommun is not mapped to a city.
+                example: Stockholm
+              listing_count_br:
+                type: integer
+                description: Sample size for the bostadsrätt stats (one per type; see /cities).
+                example: 380
+              median_kr_per_m2_br:
+                type: integer
+                nullable: true
+                description: >
+                  Aggregated-up median asking price per m² for bostadsrätter over this
+                  kommun's CURRENT advertisements (per type: _br / _villa / _radhus /
+                  _fritids). Distinct from price_stats, which is over completed sales,
+                  per year. Divide a BRF's median by this for a like-for-like ratio.
+                example: 79500
+              city_median_kr_per_m2_br:
+                type: integer
+                nullable: true
+                description: >
+                  COPIED DOWN from the parent city — the city's median_kr_per_m2_br,
+                  so a single GET /kommuns row carries both the kommun's stat and its
+                  city's. Divide median_kr_per_m2_br by this for the kommun-vs-city
+                  ratio. The full parent set is city_<agg>_<metric>_<type> (+ city fee).
+                example: 78000
+              median_fee_per_m2_br:
+                type: number
+                nullable: true
+                description: Median avgift per m²/month (bostadsrätt only).
+                example: 51.0
+              units_in_scope_br:
+                type: integer
+                nullable: true
+                description: Σ brf_num_units over the kommun's distinct BRFs (cooperative stock in scope).
+                example: 4800
+              pct_for_sale_br:
+                type: number
+                nullable: true
+                description: Share of that stock currently listed (listing_count_br / units_in_scope_br × 100).
+                example: 7.9
+              city_pct_for_sale_br:
+                type: number
+                nullable: true
+                description: >
+                  COPIED DOWN from the parent city — the city's pct_for_sale_br, so a
+                  kommun row shows whether it is more/less on-market than its city
+                  (compare pct_for_sale_br vs this). city_units_in_scope_br is alongside.
+                example: 6.9
+              avg_school_socio_index:
+                type: number
+                nullable: true
+                description: >
+                  Pooled mean school socio-economic index over the kommun's listings
+                  (median_school_socio_index alongside). city_avg_school_socio_index is
+                  the copied-down city value for a kommun-vs-city school comparison.
+                example: 101.0
               price_stats:
                 type: array
                 description: >
@@ -1004,6 +1187,9 @@ components:
           type: array
           items:
             type: object
+            # Per-type stats use a <type> suffix (br / villa / radhus / fritids);
+            # the sample below is representative, full set in src/db/schema.sql.
+            additionalProperties: true
             required:
               - kommun
               - area_name
@@ -1020,8 +1206,40 @@ components:
                 example: Trollbäcken
               listing_count:
                 type: integer
-                description: Number of advertisements currently in this område.
+                description: Total advertisements currently in this område (all boende types).
                 example: 12
+              city:
+                type: string
+                nullable: true
+                description: The city this område's kommun belongs to (copied down).
+                example: Stockholm
+              listing_count_br:
+                type: integer
+                description: Sample size for the bostadsrätt stats (one per type).
+                example: 9
+              median_kr_per_m2_br:
+                type: integer
+                nullable: true
+                description: >
+                  Aggregated-up median asking price per m² for bostadsrätter over this
+                  område's current advertisements — the neighbourhood benchmark (per
+                  type: _br / _villa / _radhus / _fritids).
+                example: 40500
+              median_fee_per_m2_br:
+                type: number
+                nullable: true
+                description: Median avgift per m²/month (bostadsrätt only).
+                example: 47.0
+              units_in_scope_br:
+                type: integer
+                nullable: true
+                description: Σ brf_num_units over the område's distinct BRFs (cooperative stock in scope).
+                example: 140
+              pct_for_sale_br:
+                type: number
+                nullable: true
+                description: Share of that stock currently listed (listing_count_br / units_in_scope_br × 100).
+                example: 6.4
         count:
           type: integer
           description: Number of (kommun, område) rows returned.
@@ -1187,6 +1405,16 @@ components:
         each (`avg_school_socio_index_1_forecast` / `_3_forecast` /
         `avg_school_socio_index_forecast`), fitted by least squares to each
         school's per-year history.
+
+        • Geo hierarchy block (copied-down benchmarks; see docs/hierarchical-stats.md)
+        — `city` (the level above kommun) plus this listing's ancestor aggregates
+        carried onto the row so it is self-contained: `area_avg_kr_per_m2` /
+        `area_median_kr_per_m2`, `kommun_avg_kr_per_m2` / `kommun_median_kr_per_m2`,
+        `city_avg_kr_per_m2` / `city_median_kr_per_m2` — each the avg/median asking
+        price per m² over listings of the SAME boende type (this listing's
+        object_type) at that ancestor level. Compare a listing's own `kr_per_m2`
+        against these to position it within its område, kommun, and city — like for
+        like — without a second query.
 
         The properties below are a representative sample; the authoritative full
         column list is src/db/schema.sql. additionalProperties is true so new
