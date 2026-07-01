@@ -139,17 +139,18 @@ paths:
         each row is fully self-contained (denormalized "One Big Table" model):
         besides the listing's own fields it embeds the housing cooperative
         (brf_*) and the five geographically nearest schools (school_1..5_*), plus
-        a derived `avg_school_socio_index` summarising the socio-economic index
-        of nearby schools. Note the direction: this is Skolverket's
-        socio-economic index, where a **higher** value means a **more**
-        socio-economically challenged student intake (greater equity-grant
-        need) — it is not a "better school" score. Lower = more advantaged.
+        a derived `avg_school_socio_index` averaging the socio-economic index of
+        nearby schools. This is Skolverket's *Index på skolenhetsnivå*
+        (socioekonomiskt index); a higher value corresponds to a higher modelled
+        share of students not expected to become eligible for a national
+        programme in upper-secondary school. See the `avg_school_socio_index`
+        field for the full definition and the source link.
 
 
         The result set is **capped at 10 rows**. Rather than paging the whole
         market, choose a `sort` that matches what you're optimising for (lowest
-        price per m², largest BRF, least socio-economically challenged nearby
-        schools, …) and narrow with the
+        price per m², largest BRF, nearby-school socio-economic index, …) and
+        narrow with the
         filters below; you then get the 10 best matches in one cheap request.
         Default order is most recently listed first.
       parameters:
@@ -223,9 +224,11 @@ paths:
             (projected avgift/m²; `_asc` = lowest projected fee first). The school sorts come in three radii —
             `school_index_1_*` (closest school), `school_index_3_*` (3 nearest) and
             `school_index_*` (5 nearest) — on the current latest-year
-            socio-economic index. Higher index = more socio-economically
-            challenged intake, so `_desc` = most challenged first and `_asc`
-            = most advantaged first (not the other way round). With matching
+            socio-economic index (Skolverket's *Index på skolenhetsnivå*; a
+            higher value = a higher modelled share of students not expected to
+            become eligible for upper-secondary school — see
+            `avg_school_socio_index`). `_desc` sorts highest index first, `_asc`
+            lowest. With matching
             `school_forecast_1_*` / `school_forecast_3_*` / `school_forecast_*`
             on the same averages projected three years ahead from the recent-years
             trend. Listings missing the sorted value sort last.
@@ -489,9 +492,10 @@ paths:
           description: >
             Only listings whose `avg_school_socio_index` (average latest-year
             socio-economic index across the 5 nearest schools) is at least this
-            value. Higher index = more socio-economically challenged intake, so
-            this filter keeps the *more challenged* areas; use a `_desc`/`_asc`
-            sort accordingly rather than assuming higher is "better".
+            value. A higher index = a higher modelled share of students not
+            expected to become eligible for upper-secondary school (see
+            `avg_school_socio_index`), so this filter keeps areas at or above
+            that index level.
           schema:
             type: number
             minimum: 0
@@ -1784,9 +1788,16 @@ components:
             Average latest-year socio-economic index across the (up to five)
             nearest schools, ignoring those whose index is suppressed. The value
             the `school_index_*` sort and `min_school_index` filter operate on.
-            Skolverket's index: **higher = more socio-economically challenged
-            intake** (greater equity-grant need), lower = more advantaged. It is
-            not a school-quality/results score.
+            Source: Skolverket's *Index på skolenhetsnivå* (socioekonomiskt
+            index), the dataset underlying the state grant *Statsbidrag för
+            stärkt kunskapsutveckling* (tidigare *Statsbidrag för likvärdig
+            skola*). Per Skolverket the index models students' preconditions from
+            socioeconomic factors that affect the probability that a student at
+            the school becomes eligible for a national programme in
+            upper-secondary school; a higher index corresponds to a higher
+            modelled share of students not expected to become eligible.
+            Definition and source:
+            https://www.skolverket.se/styrning-och-ansvar/statsbidrag/hitta-statsbidrag/statsbidrag-for-starkt-kunskapsutveckling-2026
           example: 88.4
         avg_school_socio_index_1_forecast:
           type: number
