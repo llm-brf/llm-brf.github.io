@@ -157,10 +157,37 @@ paths:
         - name: property_type
           in: query
           required: false
-          description: Restrict to one dwelling type.
+          description: >
+            LEGACY conflated dwelling-type filter, kept for back-compat. It mixes
+            two independent ideas (tenure for apartments, physical form for houses).
+            Prefer the two orthogonal filters below — `object_form` (physical form)
+            and `tenure` (property-right) — which can be combined.
           schema:
             type: string
             enum: [bostadsrätt, villa, radhus, fritidshus]
+          example: bostadsrätt
+        - name: object_form
+          in: query
+          required: false
+          description: >
+            Restrict to one physical dwelling form. This is the "what is it" axis,
+            independent of tenure. The row-house family is kept distinct here
+            (`radhus`/`parhus`/`kedjehus`). Combine with `tenure` to target e.g. a
+            radhus sold via a BRF: `object_form=radhus&tenure=bostadsrätt`.
+          schema:
+            type: string
+            enum: [lägenhet, villa, radhus, parhus, kedjehus, fritidshus]
+          example: radhus
+        - name: tenure
+          in: query
+          required: false
+          description: >
+            Restrict to one property-right (tenure) — the "how is it owned" axis,
+            independent of physical form. `bostadsrätt` = a BRF (cooperative) unit;
+            `äganderätt` = freehold. Combine with `object_form` as needed.
+          schema:
+            type: string
+            enum: [bostadsrätt, äganderätt]
           example: bostadsrätt
         - name: kommun
           in: query
@@ -1349,6 +1376,12 @@ components:
             property_type:
               type: string
               nullable: true
+            object_form:
+              type: string
+              nullable: true
+            tenure:
+              type: string
+              nullable: true
             kommun:
               type: string
               nullable: true
@@ -1507,6 +1540,25 @@ components:
           example: 3895000
         property_type:
           type: string
+          description: >
+            LEGACY conflated dwelling type (physical form for houses, tenure for
+            apartments), kept for back-compat. Prefer object_form + tenure below.
+          example: bostadsrätt
+        object_form:
+          type: string
+          nullable: true
+          description: >
+            Physical dwelling form (the "what is it" axis), independent of tenure:
+            lägenhet / villa / radhus / parhus / kedjehus / fritidshus. NULL when
+            Booli supplied no form. Per-type PRICE and SIZE stats segment by this.
+          example: lägenhet
+        tenure:
+          type: string
+          nullable: true
+          description: >
+            Property-right (the "how is it owned" axis): bostadsrätt (a BRF unit)
+            or äganderätt (freehold). NULL when unknown. Fee/loan/turnover stats
+            are scoped by this (bostadsrätt-only).
           example: bostadsrätt
         street_name:
           type: string
