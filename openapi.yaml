@@ -4,7 +4,9 @@ info:
   description: >
     Read-only API for Swedish real estate market data sourced from Booli.
     Covers completed sales transactions and property advertisements.
-  version: 0.1.0
+    The deployed service version is reported by GET /health and tracked in
+    CHANGELOG.md; keep this field in sync with the VERSION file.
+  version: 0.2.0
   contact:
     url: https://github.com/asapozhkov
 
@@ -28,6 +30,12 @@ paths:
                   status:
                     type: string
                     example: ok
+                  version:
+                    type: string
+                    description: >
+                      Deployed service version (semver), from the bundled VERSION
+                      file. "unknown" if the package omitted it. See CHANGELOG.md.
+                    example: 0.2.0
 
   /sales/stats/avg-price-per-sqm:
     get:
