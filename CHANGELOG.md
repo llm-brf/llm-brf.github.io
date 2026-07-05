@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The single source of truth for the deployed version is the [VERSION](VERSION) file,
 which is bundled into the Lambda packages and surfaced by `GET /health`.
 
+## [0.3.0] - 2026-07-06
+
+### Added
+- `GET /` discovery document — service self-description with the deployed
+  version, links to the published documentation (OpenAPI spec, usage guide,
+  coverage page, changelog, llms.txt), and the endpoint list.
+- `GET /llms.txt` — 302 redirect to the canonical llms.txt on the
+  documentation site.
+
 ## [0.2.0] - 2026-07-04
 
 ### Added
