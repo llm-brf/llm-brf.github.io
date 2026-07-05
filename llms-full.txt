@@ -52,7 +52,12 @@ Hemklok explains what to look for in a BRF årsredovisning:
 Hemklok calls a real-time API returning average kr/m² from Booli's completed-sales dataset. Filterable by year and number of rooms.
 
 API endpoint: GET https://wqyh106uo0.execute-api.eu-north-1.amazonaws.com/sales/stats/avg-price-per-sqm
+
+The underlying API offers more than the GPT currently uses: live listings with embedded BRF financials and school statistics, browsable cooperatives (/brfs), and geographic catalogues (/kommuns, /areas). It is public, read-only, and unauthenticated; GET / on the base URL returns a self-description.
+
 OpenAPI spec: https://llm-brf.github.io/openapi.yaml
+Usage guide: https://llm-brf.github.io/how-to-use-api.md
+Coverage (currently selected Stockholm-region kommuner): https://llm-brf.github.io/coverage.md
 
 **Current price context (Stockholm, kr/m²):**
 - Inner city: 60,000–90,000
@@ -142,3 +147,5 @@ Combines Swedish *hem* (home) and *klok* (wise, judicious). The name reflects th
 - Email: hello@hemklok.se
 - Repository: https://github.com/llm-brf/llm-brf.github.io
 - OpenAPI spec: https://llm-brf.github.io/openapi.yaml
+- API usage guide: https://llm-brf.github.io/how-to-use-api.md
+- API coverage: https://llm-brf.github.io/coverage.md
