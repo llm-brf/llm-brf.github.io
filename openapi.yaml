@@ -4,8 +4,8 @@ info:
   description: >
     Read-only API for Swedish real estate market data sourced from Booli.
     Covers completed sales transactions and property advertisements.
-    The deployed service version is reported by GET /health and tracked in
-    CHANGELOG.md; keep this field in sync with the VERSION file.
+    The deployed service version is reported by GET /health; changes are
+    documented in CHANGELOG.md, published alongside this spec.
   version: 0.2.0
   contact:
     url: https://github.com/asapozhkov
@@ -33,8 +33,8 @@ paths:
                   version:
                     type: string
                     description: >
-                      Deployed service version (semver), from the bundled VERSION
-                      file. "unknown" if the package omitted it. See CHANGELOG.md.
+                      Deployed service version (semver); "unknown" if
+                      unavailable. Release history in CHANGELOG.md.
                     example: 0.2.0
 
   /sales/stats/avg-price-per-sqm:
@@ -1010,8 +1010,8 @@ components:
             type: object
             # Per-boende-type stats are segmented by object_type with a <type>
             # suffix (br / villa / radhus / fritids). The properties below are a
-            # representative sample; the authoritative full set is the cities table
-            # in src/db/schema.sql (see docs/hierarchical-stats.md).
+            # representative sample; additionalProperties is true and the live
+            # response carries the authoritative full set.
             additionalProperties: true
             required:
               - city
@@ -1145,7 +1145,8 @@ components:
           items:
             type: object
             # Per-type stats use a <type> suffix (br / villa / radhus / fritids);
-            # the sample below is representative, full set in src/db/schema.sql.
+            # the sample below is representative — the live response carries the
+            # authoritative full set.
             additionalProperties: true
             required:
               - kommun
@@ -1284,7 +1285,8 @@ components:
           items:
             type: object
             # Per-type stats use a <type> suffix (br / villa / radhus / fritids);
-            # the sample below is representative, full set in src/db/schema.sql.
+            # the sample below is representative — the live response carries the
+            # authoritative full set.
             additionalProperties: true
             required:
               - kommun
@@ -1519,7 +1521,7 @@ components:
         `avg_school_socio_index_forecast`), fitted by least squares to each
         school's per-year history.
 
-        • Geo hierarchy block (copied-down benchmarks; see docs/hierarchical-stats.md)
+        • Geo hierarchy block (benchmarks copied down from the geo hierarchy)
         — `city` (the level above kommun) plus this listing's ancestor aggregates
         carried onto the row so it is self-contained: `area_avg_kr_per_m2` /
         `area_median_kr_per_m2`, `kommun_avg_kr_per_m2` / `kommun_median_kr_per_m2`,
@@ -1529,9 +1531,9 @@ components:
         against these to position it within its område, kommun, and city — like for
         like — without a second query.
 
-        The properties below are a representative sample; the authoritative full
-        column list is src/db/schema.sql. additionalProperties is true so new
-        flat columns appear without a spec change.
+        The properties below are a representative sample; additionalProperties
+        is true so new flat columns appear without a spec change — the live
+        response is authoritative for the full column list.
       additionalProperties: true
       properties:
         listing_id:
@@ -1986,8 +1988,7 @@ components:
 
 
         additionalProperties is true so new flat columns appear without a spec
-        change; the authoritative full column list is the `brfs` table in
-        src/db/schema.sql.
+        change; the live response is authoritative for the full column list.
       additionalProperties: true
       properties:
         brf_org_number:
