@@ -6,7 +6,7 @@ info:
     Covers completed sales transactions and property advertisements.
     The deployed service version is reported by GET /health; changes are
     documented in CHANGELOG.md, published alongside this spec.
-  version: 0.2.0
+  version: 0.3.0
   contact:
     url: https://github.com/asapozhkov
 
@@ -15,6 +15,62 @@ servers:
     description: Production
 
 paths:
+  /:
+    get:
+      summary: Service self-description (discovery)
+      operationId: getRoot
+      description: >
+        Returns what this API is, its deployed version, links to the published
+        documentation (OpenAPI spec, usage guide, coverage page, changelog,
+        llms.txt), and the list of endpoints. Intended for agents and humans
+        probing the base URL: start here if you know nothing else about the
+        service.
+      responses:
+        "200":
+          description: Discovery document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Real Estate Data API
+                  description:
+                    type: string
+                  version:
+                    type: string
+                    example: 0.3.0
+                  documentation:
+                    type: object
+                    description: Absolute URLs of the published docs.
+                    properties:
+                      openapi: { type: string }
+                      usage_guide: { type: string }
+                      coverage: { type: string }
+                      changelog: { type: string }
+                      llms_txt: { type: string }
+                  endpoints:
+                    type: array
+                    items:
+                      type: string
+
+  /llms.txt:
+    get:
+      summary: Redirect to the service's llms.txt
+      operationId: getLlmsTxt
+      description: >
+        302 redirect to the canonical llms.txt on the documentation site.
+        Follow the redirect for an LLM-oriented overview of the service.
+      responses:
+        "302":
+          description: Redirect to the canonical llms.txt
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Canonical llms.txt URL on the documentation site.
+
   /health:
     get:
       summary: Health check
@@ -35,7 +91,7 @@ paths:
                     description: >
                       Deployed service version (semver); "unknown" if
                       unavailable. Release history in CHANGELOG.md.
-                    example: 0.2.0
+                    example: 0.3.0
 
   /sales/stats/avg-price-per-sqm:
     get:
