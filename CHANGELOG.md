@@ -7,6 +7,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The single source of truth for the deployed version is the [VERSION](VERSION) file,
 which is bundled into the Lambda packages and surfaced by `GET /health`.
 
+## [0.4.0] - 2026-07-20
+
+### Added
+- **Central Stockholm circle** (3.4 km radius @ 59.326, 18.070): completed sales,
+  advertisements, BRF details/residences, and photos across the inner-city områden
+  (Södermalm, Norrmalm, Östermalm, Kungsholmen, Vasastan, Gamla Stan, Djurgården, …).
+- **Two-axis property classification**: `object_form` (physical form —
+  lägenhet/villa/radhus/parhus/kedjehus/fritidshus) and `tenure` (ownership —
+  bostadsrätt/äganderätt) on `sales` and `advertisements`. `property_type` retained
+  as a derived, backwards-compatible alias.
+- **Avgift (monthly fee) backfill** for the circle — ~96.6% of the last 5 years of
+  bostadsrätt sales carry `monthly_fee_kr`; the remainder are genuinely fee-less on
+  Booli.
+
+### Fixed
+- Sold-detail fee classifier now recognizes Booli's current `SoldProperty` page
+  structure: genuinely fee-less pages are classified `no_fee` (definitive) instead
+  of `challenged` (retryable), so they are no longer re-fetched indefinitely.
+
+### Known limitations
+- `tenure` is authoritative on advertisements but heuristic on sold rows (the sold
+  SERP omits `tenureForm`); radhus-in-BRF sold tenure is left NULL.
+
 ## [0.3.0] - 2026-07-06
 
 ### Added
