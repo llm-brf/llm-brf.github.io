@@ -10,10 +10,16 @@ are imported.
 
 | Kommun | Scope |
 | --- | --- |
-| Stockholm | Two circular areas only — one around the inner city, one over Söderort (the southern suburbs); not the whole kommun |
-| Solna | Whole kommun |
+| Stockholm | Whole kommun |
+| Solna | Whole kommun — except **sold** history in Järvastaden, Bergshamra and Vireberg (see below) |
 | Nacka | Whole kommun |
 | Tyresö | Whole kommun |
+
+**Known scope exception (v0.4.5).** For-sale advertisements cover all four
+kommuner in full. **Solna's *sold* history omits Järvastaden, Bergshamra and
+Vireberg** — those districts were missing from the area driver used to build the
+sold dataset, so `GET /sales`-derived results and Solna sold statistics exclude
+them. Current advertisements in those districts *are* present.
 
 The authoritative, always-current list is the live API itself:
 
@@ -26,13 +32,14 @@ that endpoint — not this page — as ground truth when querying.
 
 ## Data completeness within covered areas
 
-Coverage of an area does not mean every field is filled. The main known gap is
-the **monthly fee (avgift) on sold apartments**, which is backfilled
-progressively per kommun: Solna and Tyresö are essentially complete (~98% of
-sold bostadsrätt), while Nacka (~46%) and Stockholm (~21%) are still partial,
-with recent sales prioritized. Fee-derived statistics (e.g. fee trends) are
-correspondingly noisier for Stockholm and Nacka until the backfill completes —
-see the changelog's *Known limitations* for current status.
+Coverage of an area does not mean every field is filled. The main historical gap
+was the **monthly fee (avgift) on sold apartments**, backfilled progressively per
+kommun. As of v0.4.4 all covered kommuns — including the newly whole-kommun
+Stockholm — are **essentially complete for recent sales (~97–98% of the last five
+years of sold bostadsrätt)**. The deeper pre-2021 tail is intentionally not
+backfilled (recent avgift is the analytically useful slice), so fee-derived
+statistics are most reliable for the last five years — see the changelog's *Known
+limitations* for current status.
 
 ## Interpreting empty results
 

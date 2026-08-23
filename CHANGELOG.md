@@ -7,6 +7,115 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The single source of truth for the deployed version is the [VERSION](VERSION) file,
 which is bundled into the Lambda packages and surfaced by `GET /health`.
 
+## [0.4.5] - 2026-08-23
+
+### Changed
+- **Full for-sale (advertisements) refresh across every loaded kommun** —
+  Stockholm, Nacka, Solna and Tyresö. The ad set was replaced so sold/withdrawn
+  listings drop off: **10,294 → 11,160 advertisements** (2,473 new, 1,607 gone,
+  8,687 carried over). Per kommun: Stockholm 7,470 → **8,155**, Nacka 1,131 →
+  **1,278**, Solna 1,277 → **1,289**, Tyresö 416 → **438**. Photos re-enriched —
+  10,968/11,160 (98.3%) carry `photo_urls`. Sold listings and avgift are
+  unchanged (this is a for-sale snapshot only).
+
+### Fixed
+- **Ad scrapes now union both capture methods, which miss opposite things.**
+  Område-iteration only visits områden already in `booli_areas.csv`, so a short
+  driver silently loses whole districts — it returned just 878 Solna ads against
+  the true 1,289 (and cost Nacka 230). The kommun-wide SERP covers the whole
+  kommun but is paged and stops at `--max-pages`. Both passes now run and are
+  merged deduped on `listing_id`: iteration was a strict subset of the SERP on
+  all three small kommuns, while Stockholm was the reverse (1,151
+  iteration-only vs 23 SERP-only).
+- **Corrected a misdiagnosis in `docs/notes/stockholm-circles.md`.** The 3,514
+  ads the whole-kommun SERP returned in 0.4.4 were attributed to Booli
+  "silently truncating". They were in fact `--max-pages 100` (~35 listings/page)
+  — our own cap. Re-run at `--max-pages 200` the same SERP returned 7,004 and
+  still reported `page 1/200`. Område-iteration remains the right method for
+  Stockholm, but because it covers the kommun more completely, not because the
+  SERP truncates.
+
+### Known limitations
+- **Solna's sold data is missing Järvastaden, Bergshamra and Vireberg entirely**
+  (0 rows each). `sales_booli.csv` was built by område-iteration off the same
+  13-område driver that under-covered Solna's ads, so the same districts are
+  absent from sold history. Ads for those districts are now correct (recovered
+  via the SERP pass); the sold gap needs the områden added via
+  `resolve_areas.py` plus a Solna sold re-scrape and enrichment re-run.
+- Stockholm's 133-område driver has a smaller residual fringe gap — 23 ads found
+  only by the SERP, clustered in Vällingby, Kälvesta, Grimsta and Västberga.
+
+## [0.4.4] - 2026-08-02
+
+### Changed
+- **Stockholm expanded from three capture circles to the WHOLE kommun** (areaId 1).
+  Added the previously-uncovered NW/W stadsdelar — Bromma, Rinkeby-Kista,
+  Spånga-Tensta, Hässelby-Vällingby, Skärholmen, and western Hägersten — by
+  extending `booli_areas.csv` with 71 new områden (133 total) and running the full
+  pipeline (sold + for-sale + BRF links + BRF details + avgift + photos) over the
+  whole kommun:
+  - **Sold: 129,818 → 227,664** (191,517 bostadsrätt); coverage now spans the whole
+    kommun (lat 59.235–59.418, lon 17.796–18.148) instead of the three circles.
+  - **For-sale ads: 4,014 → 7,470** (10,294 total across all kommuns).
+  - **BRF details: 4,875 → 6,187** föreningar; 290,524 residences.
+  - **Avgift backfilled** for the new scope (`--sold-years 5`, ~30k detail fetches):
+    Stockholm avgift **65% → 97%**.
+- **`audit_coverage.py` now gates Stockholm as a whole kommun** rather than by
+  circle; the three former circles are retained as informational, ungated
+  sub-scopes. All scopes pass ≥90% on BRF-link, avgift, and photos.
+- **`tenure` now allows `ägarlägenhet`** (owner-apartment — individual freehold of
+  an apartment unit, distinct from a bostadsrätt coop share), a fifth property-right
+  alongside `bostadsrätt`/`äganderätt`/`tomträtt`/`arrende`. Surfaced by the
+  whole-kommun expansion (a single Spånga ad); added to the `advertisements` tenure
+  CHECK constraint.
+
+## [0.4.3] - 2026-07-27
+
+### Fixed
+- **Southwest Stockholm circle BRF backfill.** The SW circle (v0.4.1) shipped with
+  sold+ads+avgift but the BRF enrichment steps (`--enrich-brf`,
+  `--load-brf-details`) were skipped, leaving 69% of its bostadsrätt sold rows
+  unlinked and every `brf_*` column NULL. Ran both steps: SW BRF-link 31% → 99%,
+  adding 262 föreningar (incl. Brf Prästgårdsgränd) and regenerating
+  `brf_residences` — all scopes now ≥98% linked.
+
+### Added
+- **`src/db/audit_coverage.py`** — enrichment-completeness gate. Reports BRF-link,
+  avgift, and photo coverage per kommun / Stockholm circle and exits non-zero if
+  any dimension is below threshold. Now a required pre-deploy check (runbook
+  Step 6) so a partial Step-3 enrichment chain can't reach a deploy silently.
+
+## [0.4.2] - 2026-07-27
+
+### Changed
+- **Full for-sale (advertisements) refresh** across the entire coverage footprint:
+  Tyresö, Solna, and Nacka (full kommuns) plus Stockholm's three capture circles
+  (central 59.326,18.070,3.4 km; SW 59.275,18.025,3.0 km; Söderort E
+  59.269,18.110,4.0 km). Re-scraped every kommun and replaced the ad set so
+  sold/withdrawn listings drop off. Now **6,838 current advertisements** (was
+  7,106): Tyresö 416, Solna 1,277, Nacka 1,131, Stockholm 4,014. Circle overlap
+  deduped on `listing_id` (438 dropped). Photos re-enriched — 6,739/6,838 (98.5%)
+  carry `photo_urls`. Sold listings and avgift are unchanged (this is a for-sale
+  snapshot only).
+- **`tenure` now allows `arrende`** (leasehold plot — building owned, land
+  privately leased), a fourth property-right alongside
+  `bostadsrätt`/`äganderätt`/`tomträtt`. Six refreshed house ads carry it; the
+  `advertisements_tenure_check` constraint was widened to admit them.
+
+## [0.4.1] - 2026-07-27
+
+### Added
+- **Southwest Stockholm circle** (3 km radius @ 59.2752, 18.0245): completed
+  sales, advertisements, and avgift across the southern Söderort områden (Örby,
+  Bandhagen, Stureby, Högdalen, Svedmyra, Enskede, Årsta, Älvsjö, Hagsätra,
+  Rågsved, …). Adds 19,312 completed sales and 626 advertisements. Avgift resolved
+  for 100% of the last 5 years of bostadsrätt sales — 96.5% carry `monthly_fee_kr`,
+  the remaining 3.5% are genuinely fee-less on Booli. Overlap with the existing
+  central circle was merged fill-only, preserving prior enrichment.
+- **`tenure` now allows `tomträtt`** (site-leasehold — own the building, lease the
+  land) alongside `bostadsrätt`/`äganderätt`, a backwards-compatible widening of
+  the `advertisements.tenure` check constraint.
+
 ## [0.4.0] - 2026-07-20
 
 ### Added
