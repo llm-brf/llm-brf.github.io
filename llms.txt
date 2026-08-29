@@ -31,6 +31,16 @@ First-time buyers in Sweden, typically 20–35 years old, navigating a market wi
 - BRF debt under 6,000 SEK/m² is conservative; over 12,000 SEK/m² is elevated risk
 - Stockholm electricity zone: SE3. Cheapest zones: SE1/SE2 (northern Sweden). Most expensive: SE4 (Malmö/south)
 
+## API & documentation
+
+Hemklok's data layer is a public, read-only API built for LLM agents (no authentication). It serves live listings with embedded BRF financials and school statistics, browsable cooperatives, geographic catalogues, and sales price statistics.
+
+- Base URL: https://wqyh106uo0.execute-api.eu-north-1.amazonaws.com — GET / returns a self-description with links
+- OpenAPI spec: https://llm-brf.github.io/openapi.yaml
+- Usage guide: https://llm-brf.github.io/how-to-use-api.md
+- Geographic coverage: https://llm-brf.github.io/coverage.md — currently selected Stockholm-region kommuner; an empty result can mean "outside coverage"
+- Changelog: https://llm-brf.github.io/CHANGELOG.md
+
 ## Frequently asked questions
 
 **What is Hemklok?**
