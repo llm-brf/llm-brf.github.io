@@ -6,7 +6,7 @@ info:
     Covers completed sales transactions and property advertisements.
     The deployed service version is reported by GET /health; changes are
     documented in CHANGELOG.md, published alongside this spec.
-  version: 0.4.5
+  version: 0.5.0
   contact:
     url: https://github.com/asapozhkov
 
@@ -1150,6 +1150,20 @@ components:
                   Distinct from the current-listing `avg_kr_per_m2_br` snapshot (asking,
                   not sold).
                 example: 79000
+              sold_obs_br_2026:
+                type: integer
+                nullable: true
+                description: >
+                  Number of completed sales behind `sold_kr_per_m2_br_2026` — the sample
+                  size for that average, so a thin cell is recognisable as one.
+                  `sold_obs_{br,villa,radhus,fritids}_<year>` (per year `…_2021…2026`),
+                  NULL exactly where the paired price is NULL. Counted on the same
+                  object_form axis as the price, so it is NOT interchangeable with
+                  `num_sales_br_*`, which counts tenure = bostadsrätt for turnover: a BRF
+                  radhus counts in `sold_obs_radhus_*` here but in `num_sales_br_*`
+                  there. Especially worth checking on areas, where a type-year can rest
+                  on a handful of sales.
+                example: 1650
               school_socio_index_2026:
                 type: number
                 nullable: true
@@ -1400,7 +1414,8 @@ components:
                 description: >
                   Sold-history (self): share of the område's BR stock sold in 2026
                   (per year `turnover_br_2021…2026`, + `turnover_br_agg_3y/5y`), plus
-                  the `num_sales_br_*` / `sold_kr_per_m2_*` / `sold_fee_per_m2_*` block
+                  the `num_sales_br_*` / `sold_kr_per_m2_*` / `sold_obs_*` /
+                  `sold_fee_per_m2_*` block
                   (same shape as GET /cities). An område additionally carries its
                   ancestors' summaries copied down: `kommun_*` and `city_*`
                   (`kommun_turnover_br_agg_5y`, `city_sold_kr_per_m2_trend_5y`, …).
