@@ -7,6 +7,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The single source of truth for the deployed version is the [VERSION](VERSION) file,
 which is bundled into the Lambda packages and surfaced by `GET /health`.
 
+## [0.5.0] - 2026-08-29
+
+### Added
+- **Sample size behind every sold price: `sold_obs_{br,villa,radhus,fritids}_<year>`**
+  on `cities`, `kommuns` and `areas` (2021–2026). Each column is the number of
+  completed sales that fed the paired `sold_kr_per_m2_<type>_<year>` average, so a
+  price backed by 2 sales is now distinguishable from one backed by 200. Previously
+  only bostadsrätt had a deal count (`num_sales_br_*`), and the villa/radhus/fritids
+  price averages carried no denominator at all. The counts come from the existing
+  aggregation pass — no new source data and no extra scan of `stg_sales`.
+
+### Known limitations
+- **`sold_obs_*` and `num_sales_br_*` count different populations and are not
+  interchangeable.** `sold_obs_*` follows the *object_form* axis (physical dwelling
+  form) that the price columns use; `num_sales_br_*` follows the *tenure* axis
+  (`tenure = 'bostadsrätt'`) that turnover needs. A BRF row-house counts in
+  `sold_obs_radhus_*` but in `num_sales_br_*`. Use `sold_obs_<type>` to qualify a
+  price and `num_sales_br` only as the turnover numerator; summing `sold_obs_*`
+  across types will not equal `num_sales_br_*`.
+- The counts are per-year *self* columns only — like the rest of the per-year
+  series, they are not copied down onto child rows as `kommun_*` / `city_*`.
+- Values are NULL (not 0) for a type-year with no sale, matching the paired price.
+- Backfill requires a full reimport against a freshly provisioned schema; the
+  columns are empty until then.
+
 ## [0.4.5] - 2026-08-23
 
 ### Changed
