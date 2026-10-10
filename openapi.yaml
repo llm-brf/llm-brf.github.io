@@ -6,7 +6,7 @@ info:
     Covers completed sales transactions and property advertisements.
     The deployed service version is reported by GET /health; changes are
     documented in CHANGELOG.md, published alongside this spec.
-  version: 0.5.0
+  version: 0.5.2
   contact:
     url: https://github.com/asapozhkov
 

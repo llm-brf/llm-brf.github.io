@@ -7,6 +7,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The single source of truth for the deployed version is the [VERSION](VERSION) file,
 which is bundled into the Lambda packages and surfaced by `GET /health`.
 
+## [0.5.2] - 2026-10-10
+
+### Changed
+- **Tyresö for-sale advertisements refreshed (2026-10-10):** 417 current ads,
+  147 new; 168 delisted ads removed.
+
+## [0.5.1] - 2026-10-05
+
+### Fixed
+- **First request after Aurora auto-pause no longer returns 500.** The database
+  connection now uses a short per-attempt timeout and retries while the cluster
+  resumes; if it is still unavailable the API answers `503` with `Retry-After: 10`
+  instead of a raw 500 / gateway timeout.
+
 ## [0.5.0] - 2026-08-29
 
 ### Added
